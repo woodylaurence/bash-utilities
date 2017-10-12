@@ -1,123 +1,120 @@
 #!/usr/bin/env bats
 
+load helpers/bats-assert/load
+
 UTILITIES_SRC_DIR="../../src/utilities";
 
 @test "getMonthAsNum passing in 'Jan'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber Jan
-  [ "$output" = "01" ]
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber Jan)
+  assert_equal "$actual" "01"
 }
 
 @test "getMonthAsNum passing in 'January'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber January
-  [ "$output" = "01" ]
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber January)
+  assert_equal "$actual" "01"
 }
 
 @test "getMonthAsNum passing in 'Feb'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber Feb
-  [ "$output" = "02" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber Feb)
+  assert_equal "$actual" "02"
 }
 
 @test "getMonthAsNum passing in 'February'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber February
-  [ "$output" = "02" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber February)
+  assert_equal "$actual" "02"
 }
 
 @test "getMonthAsNum passing in 'Mar'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber Mar
-  [ "$output" = "03" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber Mar)
+  assert_equal "$actual" "03"
 }
 
 @test "getMonthAsNum passing in 'March'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber March
-  [ "$output" = "03" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber March)
+  assert_equal "$actual" "03"
 }
 
 @test "getMonthAsNum passing in 'Apr'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber Apr
-  [ "$output" = "04" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber Apr)
+  assert_equal "$actual" "04"
 }
 
 @test "getMonthAsNum passing in 'April'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber April
-  [ "$output" = "04" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber April)
+  assert_equal "$actual" "04"
 }
 
 @test "getMonthAsNum passing in 'May'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber May
-  [ "$output" = "05" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber May)
+  assert_equal "$actual" "05"
 }
 
 @test "getMonthAsNum passing in 'Jun'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber Jun
-  [ "$output" = "06" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber Jun)
+  assert_equal "$actual" "06"
 }
 
 @test "getMonthAsNum passing in 'June'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber June
-  [ "$output" = "06" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber June)
+  assert_equal "$actual" "06"
 }
 
 @test "getMonthAsNum passing in 'Jul'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber Jul
-  [ "$output" = "07" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber Jul)
+  assert_equal "$actual" "07"
 }
 
 @test "getMonthAsNum passing in 'July'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber July
-  [ "$output" = "07" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber July)
+  assert_equal "$actual" "07"
 }
 
 @test "getMonthAsNum passing in 'Aug'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber Aug
-  [ "$output" = "08" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber Aug)
+  assert_equal "$actual" "08"
 }
 
 @test "getMonthAsNum passing in 'August'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber August
-  [ "$output" = "08" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber August)
+  assert_equal "$actual" "08"
 }
 
 @test "getMonthAsNum passing in 'Sep'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber Sep
-  [ "$output" = "09" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber Sep)
+  assert_equal "$actual" "09"
 }
 
 @test "getMonthAsNum passing in 'September'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber September
-  [ "$output" = "09" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber September)
+  assert_equal "$actual" "09"
 }
 
 @test "getMonthAsNum passing in 'Oct'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber Oct
-  [ "$output" = "10" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber Oct)
+  assert_equal "$actual" "10"
 }
 
 @test "getMonthAsNum passing in 'October'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber October
-  [ "$output" = "10" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber October)
+  assert_equal "$actual" "10"
 }
 
 @test "getMonthAsNum passing in 'Nov'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber Nov
-  [ "$output" = "11" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber Nov)
+  assert_equal "$actual" "11"
 }
 
 @test "getMonthAsNum passing in 'November'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber November
-  [ "$output" = "11" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber November)
+  assert_equal "$actual" "11"
 }
 
 @test "getMonthAsNum passing in 'Dec'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber Dec
-  [ "$output" = "12" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber Dec)
+  assert_equal "$actual" "12"
 }
 
 @test "getMonthAsNum passing in 'December'" {
-  run "${UTILITIES_SRC_DIR}"/getMonthAsNumber December
-  [ "$output" = "12" ];
+  actual=$("${UTILITIES_SRC_DIR}"/getMonthAsNumber December)
+  assert_equal "$actual" "12"
 }
-
-# @test "addition using dc" {
-  # result="$(echo 2 2+p | dc)"
-  # [ "$result" -eq 4 ]
-# }
