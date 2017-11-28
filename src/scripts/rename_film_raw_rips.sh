@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# WORK_DIR="/mnt/Dump/RawRips/Films"
-WORK_DIR="/home/laurence/test"
+WORK_DIR="/mnt/Dump/RawRips/Films"
 RENAMED_MARKER_FILE_NAME=".renamed"
 
 cd "$WORK_DIR"
