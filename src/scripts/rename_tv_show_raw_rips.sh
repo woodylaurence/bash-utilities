@@ -7,6 +7,9 @@ cd "$WORK_DIR"
 
 for seriesFolder in *
 do
+	echo
+	echo
+	
 	pushd "$seriesFolder" > /dev/null
 
 	for seasonFolder in *
@@ -55,9 +58,6 @@ do
 		echo "Renamed episodes in $seasonFolder"
 
 		popd > /dev/null
-
-		echo
-		echo
 	done
 
 	popd > /dev/null
