@@ -5,7 +5,7 @@ RENAMED_MARKER_FILE_NAME=".renamed"
 
 cd "$WORK_DIR"
 
-for filmFolder in *
+for filmFolder in */
 do
 	if [[ -e "$filmFolder/$RENAMED_MARKER_FILE_NAME" ]]; then
 		echo "Already renamed file in $filmFolder"
@@ -19,9 +19,9 @@ do
 	fi
 
 		FILM_NAME_REGEX="^(.*)_(DVD|BluRay)Rip$"
-		filmName=$(sed -r "s/$FILM_NAME_REGEX/\1/" <<< "$filmFolder")
+		filmName=$(sed -nr "s/$FILM_NAME_REGEX/\1/p" <<< "$filmFolder")
 		if [[ -z "$filmName" ]]; then
-		echo "Woah, could get film name from $filmFolder based on regex...Skipping."
+		echo "Woah, could not get film name from $filmFolder based on regex...Skipping."
 		continue
 	fi
 
