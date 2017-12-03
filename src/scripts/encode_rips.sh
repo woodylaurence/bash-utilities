@@ -160,7 +160,7 @@ done
 : "${secsToSleep:=0}"
 
 #Create output directory if it doesn't exist
-outputDirAbsolutePath=$(readlink -m "$workingDir")
+outputDirAbsolutePath=$(readlink -m "$outputDir")
 if [[ ! -e "$outputDirAbsolutePath" ]]; then
 	mkdir "$outputDirAbsolutePath"
 fi
