@@ -165,6 +165,8 @@ if [[ ! -e "$outputDirAbsolutePath" ]]; then
 	mkdir "$outputDirAbsolutePath"
 fi
 
+outputFile="$outputDir/HandbrakeOutput.txt"
+
 echo "Working in $workingDir"
 echo "Outputting to $outputDir"
 echo "rfRating = $rfRating, speed = $speed, encoder = $encoder"
@@ -180,11 +182,9 @@ filesEncoded=0
 totalNumFilesToEncode=$(ls -1 *.mkv | wc -l)
 for file in *.mkv
 do
-	echo "\nEncoding $file ... "
+	echo "\nEncoding $file ... " 2>&1 tee -a "$outputFile"
 
 	filenameWithoutExtension="${file%.*}"
-
-	echo "Encoding $file ...\n"
 
 	HandBrakeCLI -i "$file" \
 				 -o "$outputDir/$filenameWithoutExtension.$extension" \
@@ -196,7 +196,7 @@ do
 					--vfr \
 				 "$audioSettings" \
 				 "$subtitleSettings" \
-				 --auto-anamorphic
+				 --auto-anamorphic 2>> "$outputFile"
 
 	echo "\nCompleted $file\n\n------------------------------------\n"
 
