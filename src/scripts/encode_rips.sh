@@ -1,18 +1,18 @@
 #!/bin/bash
 
 #Constants
-DEFAULT_OUTPUT_DIR="/mnt/Media2/Dump/HandbrakeCLI_Output"
+DEFAULT_OUTPUT_DIR="/mnt/Dump/HandbrakeCLI_Output"
 
 #Error Codes:
 ILLEGAL_OPTION=1
 ILLEGAL_PRESET=2
-ILLEGAL_SPEED=3
+ILLEGAL_ENCODER=3
 ILLEGAL_SUBTITLE=4
 ILLEGAL_WAIT=5
 ILLEGAL_WORKING_DIR=6
 
 #Read and assign script arguments
-while getopts ":p:r:s:i:o:w:" opt
+while getopts ":p:e:s:i:o:w:" opt
 do
 	case $opt in
 		p )
@@ -20,6 +20,7 @@ do
 				br-high)
 					rfRating=18
 					speed=medium
+					encoder=x264
 					container=mkv
 					extension=mkv
 					audioSettings="-a 1,1 -E faac,ac3 -B 320,640 -R auto,auto -6 dpl2,6ch" ;;
@@ -27,16 +28,10 @@ do
 				br-std)
 					rfRating=20
 					speed=fast
+					encoder=x264
 					container=mkv
 					extension=mkv
 					audioSettings="-a 1,1 -E faac,ac3 -B 320,576 -R auto,auto -6 dpl2,6ch" ;;
-
-				br-small)
-					rfRating=22
-					speed=medium
-					container=mkv
-					extension=mkv
-					audioSettings="-a 1,1 -E faac,ac3 -B 256,448 -R auto,auto -6 dpl2,6ch" ;;
 
 				br-fast)
 					rfRating=20
@@ -45,6 +40,13 @@ do
 					extension=mkv
 					audioSettings="-a 1,1 -E faac,ac3 -B 320,576 -R auto,auto -6 dpl2,6ch" ;;
 
+				br-hevc)
+					rfRating=20
+					speed=medium
+					encoder=x265
+					container=mkv
+					extension=mkv
+					audioSettings="-a 1,1 -E faac,ac3 -B 320,576 -R auto,auto -6 dpl2,6ch" ;;
 
 				dvd-high)
 					rfRating=19
@@ -60,16 +62,17 @@ do
 					extension=m4v
 					audioSettings="-a 1 -E faac -B 256 -R auto -6 dpl2" ;;
 
-				dvd-small)
-					rfRating=22
-					speed=medium
+				dvd-fast)
+					rfRating=20
+					speed=veryfast
 					container=mp4
 					extension=m4v
 					audioSettings="-a 1 -E faac -B 256 -R auto -6 dpl2" ;;
 
-				dvd-fast)
+				dvd-hevc)
 					rfRating=20
-					speed=veryfast
+					speed=medium
+					encoder=x265
 					container=mp4
 					extension=m4v
 					audioSettings="-a 1 -E faac -B 256 -R auto -6 dpl2" ;;
@@ -79,23 +82,17 @@ do
 					exit $ILLEGAL_PRESET ;;
 			esac ;;
 
-		r )
+		e )
 			case "$OPTARG" in
-				placebo\
-				|veryslow\
-				|slower\
-				|slow\
-				|medium\
-				|fast\
-				|faster\
-				|veryfast\
-				|superfast\
-				|ultrafast)
-					speed="$OPTARG";;
+				x264)
+					encoder=x264 ;;
+
+				x265)
+					encoder=x265 ;;
 
 				*)
-					echo "ERROR: Illegal speed value '$OPTARG'....Exiting"
-					exit $ILLEGAL_SPEED
+					echo "ERROR: Illegal encoder value '$OPTARG'....Exiting"
+					exit $ILLEGAL_ENCODER
 			esac ;;
 
 		s )
@@ -133,8 +130,8 @@ do
 		w )
 			WAIT_REGEX="^([0-9]+)x([0-9]+)$"
 			if [[ "$OPTARG" =~ $WAIT_REGEX ]]; then
-				numEpisodesBetweenSleep=$(sed -r "s*${WAIT_REGEX}*\1*" <<< "$OPTARG")
-				secsToSleep=$(sed -r "s*${WAIT_REGEX}*\2*" <<< "$OPTARG")
+				numEpisodesBetweenSleep=$(sed -nr "s/${WAIT_REGEX}/\1/p" <<< "$OPTARG")
+				secsToSleep=$(sed -nr "s/${WAIT_REGEX}/\2/p" <<< "$OPTARG")
 				sleepingEnabled=true
 			else
 				echo "ERROR: Illegal wait option '$OPTARG'."
@@ -153,6 +150,7 @@ done
 : "${outputDir:=$DEFAULT_OUTPUT_DIR}"
 : "${rfRating:=20}"
 : "${speed:=fast}"
+: "${encoder:=x264}"
 : "${container:=mp4}"
 : "${extension:=m4v}"
 : "${audioSettings:=-a 1 -E faac -B 320 -R auto -6 dpl2}"
@@ -169,7 +167,7 @@ fi
 
 echo "Working in $workingDir"
 echo "Outputting to $outputDir"
-echo "rfRating = $rfRating, speed = $speed"
+echo "rfRating = $rfRating, speed = $speed, encoder = $encoder"
 echo "container = $container, extension = $extension"
 echo "audioSettings = $audioSettings"
 echo "subtitleSettings = $subtitleSettings"
@@ -188,17 +186,17 @@ do
 
 	echo "Encoding $file ...\n"
 
-	#HandBrakeCLI -i "$file" \
-	#			 -o "$outputDir/$filenameWithoutExtension.$extension" \
-	#			 -f "$container" \
-	#			 -m \
-	#			 -e x264 \
-	#			 	--x264-preset "$speed" \
-	#			-q "$rfRating" \
-	#				--vfr \
-	#			"$audioSettings" \
-	#			"$subtitleSettings" \
-	#			--strict-anamorphic
+	HandBrakeCLI -i "$file" \
+				 -o "$outputDir/$filenameWithoutExtension.$extension" \
+				 -f "$container" \
+				 -m \
+				 -e $encoder \
+				 	--${encoder}-preset "$speed" \
+				 -q "$rfRating" \
+					--vfr \
+				 "$audioSettings" \
+				 "$subtitleSettings" \
+				 --auto-anamorphic
 
 	echo "\nCompleted $file\n\n------------------------------------\n"
 
