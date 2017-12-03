@@ -174,6 +174,8 @@ echo "container = $container, extension = $extension"
 echo "audioSettings = $audioSettings"
 echo "subtitleSettings = $subtitleSettings"
 echo "Sleeping ${secsToSleep}s every $numEpisodesBetweenSleep episodes"
+echo
+echo
 
 cd "$workingDir"
 
@@ -182,7 +184,7 @@ filesEncoded=0
 totalNumFilesToEncode=$(ls -1 *.mkv | wc -l)
 for file in *.mkv
 do
-	echo "\nEncoding $file ... " 2>&1 tee -a "$outputFile"
+	echo -e "\nEncoding $file ... " 2>&1 | tee -a "$outputFile"
 
 	filenameWithoutExtension="${file%.*}"
 
