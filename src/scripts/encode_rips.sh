@@ -179,10 +179,12 @@ echo
 
 cd "$workingDir"
 
+acceptedMediaFiles="*.mkv *.mp4 *.m4v *.avi"
+shopt -s nullglob
+totalNumFilesToEncode=$(ls -1 $acceptedMediaFiles | wc -l)
+
 filesEncoded=0
-#TODO Relax the restriction on only processing .mkv files
-totalNumFilesToEncode=$(ls -1 *.mkv | wc -l)
-for file in *.mkv
+for file in $acceptedMediaFiles
 do
 	echo -e "\nEncoding $file ... " 2>&1 | tee -a "$outputFile"
 
@@ -200,7 +202,7 @@ do
 				 "$subtitleSettings" \
 				 --auto-anamorphic 2>> "$outputFile"
 
-	echo "\nCompleted $file\n\n------------------------------------\n"
+	echo -e "\nCompleted $file\n\n------------------------------------\n"
 
 	let filesEncoded++
 
