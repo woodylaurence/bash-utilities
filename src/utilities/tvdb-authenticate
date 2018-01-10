@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [[ -z $1 ]]; then
+	echo "ERROR: no API key provided."
+	exit 1
+fi
+
+loginUrl="https://api.thetvdb.com/login"
+acceptJsonHeader="Accept: application/json"
+jsonContentHeader="Content-Type: application/json"
+
+rawJson=$(curl --silent -X POST --header "$acceptJsonHeader" --header "$jsonContentHeader" -d "{ \"apikey\":\"$1\" }" "$loginUrl")
+echo "$rawJson" | jq -r ".token"
