@@ -8,8 +8,11 @@ if [[ -z $1 ]]; then
 fi
 
 if [[ -e "$CACHED_TOKEN_FILE" ]]; then
-	cat "$CACHED_TOKEN_FILE"
-	exit 0
+	secondsSinceTokenCacheUpdated=$(( $(date +%s) - $(date -r $CACHED_TOKEN_FILE +%s) ))
+	if [[ $secondsSinceTokenCacheUpdated -lt "84000" ]]; then
+		cat "$CACHED_TOKEN_FILE"
+		exit 0
+	fi
 fi
 
 loginUrl="https://api.thetvdb.com/login"

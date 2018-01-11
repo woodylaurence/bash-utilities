@@ -50,3 +50,23 @@ teardown() {
 	assert_success
 	assert_output "$cachedTokenValue"
 }
+
+@test "tvdb-authenticate INT : cached token exists and edited less than 24 hours ago should return token from cache" {
+	cachedTokenValue="fake-token-value"
+	echo "$cachedTokenValue" > "$CACHED_TOKEN_FILE"
+	touch -d "23 hours ago" "$CACHED_TOKEN_FILE"
+
+	run "$UTILITIES_SRC_DIR"/tvdb-authenticate "$TVDB_API_KEY"
+	assert_success
+	assert_output "$cachedTokenValue"
+}
+
+@test "tvdb-authenticate INT : cached token exists and edited 24 hours ago should return token from cache" {
+	cachedTokenValue="fake-token-value"
+	echo "$cachedTokenValue" > "$CACHED_TOKEN_FILE"
+	touch -d "24 hours ago" "$CACHED_TOKEN_FILE"
+
+	run "$UTILITIES_SRC_DIR"/tvdb-authenticate "$TVDB_API_KEY"
+	assert_success
+	assert_output --regexp "^[A-Za-z0-9_.-]{464}$"
+}
