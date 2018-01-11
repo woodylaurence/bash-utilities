@@ -5,11 +5,22 @@ load helpers/bats-support/load
 load helpers/bats-assert/load
 
 UTILITIES_SRC_DIR="../../src/utilities";
+CACHED_TOKEN_FILE="/tmp/usr/.tvdb-token-cache"
 
 setup() {
 	if [[ -z "$TVDB_API_KEY" ]]; then
 		echo "TVDB_API_KEY not found in environment variables..."
 		assert_failure
+	fi
+
+	if [[ -e "$CACHED_TOKEN_FILE" ]]; then
+		mv "$CACHED_TOKEN_FILE" "${CACHED_TOKEN_FILE}.moved"
+	fi
+}
+
+teardown() {
+	if [[ -e "${CACHED_TOKEN_FILE}.moved" ]]; then
+		mv "${CACHED_TOKEN_FILE}.moved" "$CACHED_TOKEN_FILE"
 	fi
 }
 
@@ -25,8 +36,17 @@ setup() {
 	assert_output "null"
 }
 
-@test "tvdb-authenticate INT : providing valid key should return valid token" {
+@test "tvdb-authenticate INT : no cached token, providing valid key should return valid token" {
 	run "$UTILITIES_SRC_DIR"/tvdb-authenticate "$TVDB_API_KEY"
 	assert_success
 	assert_output --regexp "^[A-Za-z0-9_.-]{464}$"
+}
+
+@test "tvdb-authenticate INT : cached token exists, providing valid key should return token from cache" {
+	cachedTokenValue="fake-token-value"
+	echo "$cachedTokenValue" > "$CACHED_TOKEN_FILE"
+
+	run "$UTILITIES_SRC_DIR"/tvdb-authenticate "$TVDB_API_KEY"
+	assert_success
+	assert_output "$cachedTokenValue"
 }
