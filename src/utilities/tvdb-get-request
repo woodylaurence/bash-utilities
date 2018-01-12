@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [[ -z $1 ]]; then
+	echo "ERROR: No API token provided."
+	exit 1
+fi
+
+if [[ -z $2 ]]; then
+	echo "ERROR: No API request URL provided."
+	exit 1
+fi
+
+curl --silent -X GET --header "Accept: application/json" --header "Authorization: Bearer $1" "https://api.thetvdb.com$2"
