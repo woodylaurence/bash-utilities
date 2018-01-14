@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [[ -z $1 ]]; then
+	echo "ERROR: No series search term provided."
+	exit 1
+fi
+
+token=$(tvdb-authenticate "$TVDB_API_KEY")
+
+urlSafeSeriesName=$(urlencode $1)
+searchResultJson=$(tvdb-get-request $token "/search/series?name='$urlSafeSeriesName'")
+
+jqQuery="if has(\"data\")
+		 then
+			 [ .data[] | {SeriesName: .seriesName, SeriesId: .id}]
+		 else
+			 null
+		end"
+
+echo $searchResultJson | jq -cr "$jqQuery"
