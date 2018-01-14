@@ -12,7 +12,7 @@ searchResultJson=$(tvdb-get-request $token "/search/series?name='$urlSafeSeriesN
 
 jqQuery="if has(\"data\")
 		 then
-			 [ .data[] | {SeriesName: .seriesName, SeriesId: .id}]
+			 [ .data[] | {seriesName: .seriesName, seriesId: .id}]
 		 else
 			 null
 		end"
