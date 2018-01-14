@@ -1,0 +1,53 @@
+#!/bin/bash
+
+if [[ -z $1 ]]; then
+	echo "ERROR: No series search term provided."
+	exit 1
+fi
+
+#Authenticate with TVDB
+token=$(tvdb-authenticate $TVDB_API_KEY)
+
+#Search series by name
+urlSafeSeriesName=$(urlencode $1)
+seriesSearchResultsJson=$(tvdb-search-series "$urlSafeSeriesName")
+
+#Get Series Id from results, if multiple, request which result user wants
+numSeriesFound=$(echo "$seriesSearchResultsJson" | jq "length")
+if [[ "$numSeriesFound" -eq "0" ]]; then
+	echo "null"
+	exit 0
+elif [[ "$numSeriesFound" -gt "1" ]]; then
+	echo "$seriesSearchResultsJson" | jq -r
+	echo -n "Multiple series found..."
+
+	seriesSelected=false
+	while ! $seriesSelected
+	do
+		echo "Please select seriesId from above"
+		read selectedSeriesId
+		seriesSelected=$(echo "$seriesSearchResultsJson" | jq "any(.seriesId == $selectedSeriesId)")
+	done
+
+	seriesId=$selectedSeriesId
+else
+	seriesId=$(echo "$seriesSearchResultsJson" | jq -cr ".[0].seriesId")
+fi
+
+#Query episode information for requested series
+apiEndpoint="/series/$seriesId/episodes"
+if [[ -n $2 ]]; then
+	apiEndpoint="$apiEndpoint/query?airedSeason=$2"
+	if [[ -n $3 ]]; then
+		apiEndpoint="${apiEndpoint}&airedEpisode=$3"
+	fi
+fi
+
+episodeDetailResultsJson=$(tvdb-get-request $token "$apiEndpoint")
+jqQuery="if has(\"data\")
+		 then
+			 [.data[] | { season: .airedSeason, episode: .airedEpisodeNumber, name: .episodeName}]
+		 else
+			 null
+		 end"
+echo "$episodeDetailResultsJson" | jq -cr "$jqQuery"
