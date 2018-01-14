@@ -1,6 +1,7 @@
 #!/bin/bash
 
-CACHED_TOKEN_FILE="/tmp/usr/.tvdb-token-cache"
+CACHED_TOKEN_DIRECTORY="/tmp/usr"
+CACHED_TOKEN_FILE="$CACHED_TOKEN_DIRECTORY/.tvdb-token-cache"
 
 if [[ -z $1 ]]; then
 	echo "ERROR: no API key provided."
@@ -22,5 +23,5 @@ jsonContentHeader="Content-Type: application/json"
 rawJson=$(curl --silent -X POST --header "$acceptJsonHeader" --header "$jsonContentHeader" -d "{ \"apikey\":\"$1\" }" "$loginUrl")
 token=$(echo "$rawJson" | jq -r ".token")
 
-echo "$token" > "$CACHED_TOKEN_FILE"
+mkdir -p "$CACHED_TOKEN_DIRECTORY" && echo "$token" > "$CACHED_TOKEN_FILE"
 echo "$token"
