@@ -1,5 +1,10 @@
 #!/bin/bash
 
+#TODO Add in caching
+#	- Save list of series information to cached file; array of series with information
+#	- Add option to ignore cache which always goes to web apikey
+#	- Add option to clear cache which always clears cache
+
 if [[ -z $1 ]]; then
 	echo "ERROR: No series search term provided."
 	exit 1
