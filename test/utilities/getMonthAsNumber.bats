@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-load helpers/bats-assert/load
+load ../helpers/bats-assert/load
 
 UTILITIES_SRC_DIR="../../src/utilities";
 

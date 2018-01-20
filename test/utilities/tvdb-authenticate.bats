@@ -1,8 +1,8 @@
 #!/bin/bash
 
-load helpers/mocks/stub
-load helpers/bats-support/load
-load helpers/bats-assert/load
+load ../helpers/mocks/stub
+load ../helpers/bats-support/load
+load ../helpers/bats-assert/load
 
 UTILITIES_SRC_DIR="../../src/utilities";
 CACHED_TOKEN_FILE="/tmp/usr/.tvdb-token-cache"
