@@ -8,10 +8,23 @@ fi
 
 seriesName=$(echo "$1" | sed -r "s/$tvEpisodeRegex/\1/")
 seasonNumber=$(echo $1 | sed -r "s/$tvEpisodeRegex/\2/" | sed "s/^0*//")
+formattedSeasonNum=$(printf "%02d\n" $seasonNumber)
 episodeNumber=$(echo $1 | sed -r "s/$tvEpisodeRegex/\3/" | sed "s/^0*//")
+formattedEpisodeNum=$(printf "%02d\n" $episodeNumber)
 formattedSeriesName=$(echo "$seriesName" | sed -r "s/([A-Z])/ \1/g" \
 										 | sed -r "s/^ //g" \
 										 | sed "s/[-._]//g" \
 										 | sed -r "s/ ([ ]*)/ /g")
+seriesSearchTerm=$(echo "$formattedSeriesName" | sed -r "s/([A-Z])/\L\1/g")
 
-echo "{\"filename\":\"$1\",\"seriesName\":\"$seriesName\",\"formattedSeriesName\":\"$formattedSeriesName\",\"seasonNumber\":$seasonNumber,\"episodeNumber\":$episodeNumber}"
+echo "{
+\"filename\":\"$1\",
+\"seriesId\":null,
+\"seriesName\":\"$seriesName\",
+\"formattedSeriesName\":\"$formattedSeriesName\",
+\"seriesSearchTerm\":\"$seriesSearchTerm\",
+\"seasonNumber\":$seasonNumber,
+\"formattedSeasonNum\":\"$formattedSeasonNum\",
+\"episodeNumber\":$episodeNumber,
+\"formattedEpisodeNum\":\"$formattedEpisodeNum\"
+}"
