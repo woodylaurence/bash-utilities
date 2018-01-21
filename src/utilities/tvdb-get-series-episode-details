@@ -13,31 +13,11 @@ fi
 #Authenticate with TVDB
 token=$(tvdb-authenticate $TVDB_API_KEY)
 
-#Search series by name
-urlSafeSeriesName=$(urlencode $1)
-seriesSearchResultsJson=$(tvdb-search-series "$urlSafeSeriesName")
-
-#Get Series Id from results, if multiple, request which result user wants
-numSeriesFound=$(echo "$seriesSearchResultsJson" | jq "length")
-if [[ "$numSeriesFound" -eq "0" ]]; then
-	echo "null"
-	exit 0
-elif [[ "$numSeriesFound" -gt "1" ]]; then
-	echo "$seriesSearchResultsJson" | jq -r
-	echo -n "Multiple series found..."
-
-	seriesSelected=false
-	while ! $seriesSelected
-	do
-		echo "Please select seriesId from above"
-		read selectedSeriesId
-		seriesSelected=$(echo "$seriesSearchResultsJson" | jq "any(.seriesId == $selectedSeriesId)")
-	done
-
-	seriesId=$selectedSeriesId
-else
-	seriesId=$(echo "$seriesSearchResultsJson" | jq -cr ".[0].seriesId")
-fi
+#Get series Id from series search term
+seriesIdFile=".seriesId"
+tvdb-get-series-id "$1" "$seriesIdFile"
+seriesId=$(cat $seriesIdFile | jq ".seriesId")
+rm "$seriesIdFile"
 
 #Query episode information for requested series
 apiEndpoint="/series/$seriesId/episodes"

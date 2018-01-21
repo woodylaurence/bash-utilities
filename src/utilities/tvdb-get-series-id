@@ -1,0 +1,34 @@
+#!/bin/bash
+
+if [[ -z $1 ]]; then
+	echo "ERROR: No series search term provided."
+	exit 1
+fi
+
+#Output stream for end json reuslt is /dev/stdout if not supplied in $2
+outputStream="${2:-/dev/stdout}"
+
+#Search series by name
+urlSafeSeriesName=$(urlencode $1)
+seriesSearchResultsJson=$(tvdb-search-series "$urlSafeSeriesName")
+
+#Get Series Id from results, if multiple, request which result user wants
+numSeriesFound=$(echo "$seriesSearchResultsJson" | jq "length")
+if [[ "$numSeriesFound" -eq "0" ]]; then
+	echo "null" > "$outputStream"
+elif [[ "$numSeriesFound" -eq "1" ]]; then
+	echo "$seriesSearchResultsJson" | jq -cr ".[0] | { seriesSearchTerm: \"$1\", seriesId: .seriesId }" > "$outputStream"
+else
+	echo "$seriesSearchResultsJson" | jq -r
+	echo -n "Multiple series found..."
+
+	seriesSelected=false
+	while ! $seriesSelected
+	do
+		echo "Please select seriesId from above"
+		read selectedSeriesId
+		seriesSelected=$(echo "$seriesSearchResultsJson" | jq "any(.seriesId == $selectedSeriesId)")
+	done
+
+	echo "$seriesSearchResultsJson" | jq -c ".[] | select(.seriesId == $selectedSeriesId) | { seriesSearchTerm: \"$1\", seriesId: $selectedSeriesId }" > "$outputStream"
+fi
