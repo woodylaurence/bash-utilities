@@ -6,21 +6,27 @@
 #	- Add option to clear cache which always clears cache
 
 if [[ -z $1 ]]; then
-	echo "ERROR: No series id provided."
+	echo "ERROR: No series search term provided."
 	exit 1
 fi
 
+#Authenticate with TVDB
+token=$(tvdb-authenticate $TVDB_API_KEY)
+
+#Get series Id from series search term
+seriesIdFile=".seriesId"
+tvdb-get-series-id "$1" "$seriesIdFile"
+seriesId=$(cat $seriesIdFile | jq ".seriesId")
+rm "$seriesIdFile"
+
 #Query episode information for requested series
-apiEndpoint="/series/$1/episodes"
+apiEndpoint="/series/$seriesId/episodes"
 if [[ -n $2 ]]; then
 	apiEndpoint="$apiEndpoint/query?airedSeason=$2"
 	if [[ -n $3 ]]; then
 		apiEndpoint="${apiEndpoint}&airedEpisode=$3"
 	fi
 fi
-
-#Authenticate with TVDB
-token=$(tvdb-authenticate $TVDB_API_KEY)
 
 episodeDetailResultsJson=$(tvdb-get-request $token "$apiEndpoint")
 jqQuery="if has(\"data\")

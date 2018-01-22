@@ -20,7 +20,7 @@ elif [[ "$numSeriesFound" -eq "1" ]]; then
 	echo "$seriesSearchResultsJson" | jq -cr ".[0] | { seriesSearchTerm: \"$1\", seriesId: .seriesId }" > "$outputStream"
 else
 	echo "$seriesSearchResultsJson" | jq -r
-	echo -n "Multiple series found..."
+	echo -n "Multiple series found for '$1'..."
 
 	seriesSelected=false
 	while ! $seriesSelected

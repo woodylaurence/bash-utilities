@@ -17,6 +17,8 @@ formattedSeriesName=$(echo "$seriesName" | sed -r "s/([A-Z])/ \1/g" \
 										 | sed -r "s/ ([ ]*)/ /g")
 seriesSearchTerm=$(echo "$formattedSeriesName" | sed -r "s/([A-Z])/\L\1/g")
 
+#TODO Need to introduce extension in here
+
 echo "{
 \"filename\":\"$1\",
 \"seriesId\":null,
