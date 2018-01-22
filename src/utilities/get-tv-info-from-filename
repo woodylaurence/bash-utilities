@@ -16,8 +16,7 @@ formattedSeriesName=$(echo "$seriesName" | sed -r "s/([A-Z])/ \1/g" \
 										 | sed "s/[-._]//g" \
 										 | sed -r "s/ ([ ]*)/ /g")
 seriesSearchTerm=$(echo "$formattedSeriesName" | sed -r "s/([A-Z])/\L\1/g")
-
-#TODO Need to introduce extension in here
+extension="${1##*.}"
 
 echo "{
 \"filename\":\"$1\",
@@ -28,5 +27,6 @@ echo "{
 \"seasonNumber\":$seasonNumber,
 \"formattedSeasonNum\":\"$formattedSeasonNum\",
 \"episodeNumber\":$episodeNumber,
-\"formattedEpisodeNum\":\"$formattedEpisodeNum\"
+\"formattedEpisodeNum\":\"$formattedEpisodeNum\",
+\"extension\":\"$extension\"
 }"

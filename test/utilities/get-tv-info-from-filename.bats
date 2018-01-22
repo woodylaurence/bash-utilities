@@ -69,7 +69,8 @@ teardown() {
 \"seasonNumber\":1,
 \"formattedSeasonNum\":\"01\",
 \"episodeNumber\":19,
-\"formattedEpisodeNum\":\"19\"
+\"formattedEpisodeNum\":\"19\",
+\"extension\":\"mkv\"
 }"
 }
 
@@ -85,7 +86,8 @@ teardown() {
 \"seasonNumber\":1,
 \"formattedSeasonNum\":\"01\",
 \"episodeNumber\":19,
-\"formattedEpisodeNum\":\"19\"
+\"formattedEpisodeNum\":\"19\",
+\"extension\":\"mkv\"
 }"
 
 	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename "Psych_S14E19.mkv"
@@ -99,7 +101,8 @@ teardown() {
 \"seasonNumber\":14,
 \"formattedSeasonNum\":\"14\",
 \"episodeNumber\":19,
-\"formattedEpisodeNum\":\"19\"
+\"formattedEpisodeNum\":\"19\",
+\"extension\":\"mkv\"
 }"
 }
 
@@ -115,7 +118,8 @@ teardown() {
 \"seasonNumber\":2,
 \"formattedSeasonNum\":\"02\",
 \"episodeNumber\":18,
-\"formattedEpisodeNum\":\"18\"
+\"formattedEpisodeNum\":\"18\",
+\"extension\":\"mkv\"
 }"
 }
 
@@ -131,7 +135,8 @@ teardown() {
 \"seasonNumber\":1,
 \"formattedSeasonNum\":\"01\",
 \"episodeNumber\":5,
-\"formattedEpisodeNum\":\"05\"
+\"formattedEpisodeNum\":\"05\",
+\"extension\":\"mkv\"
 }"
 }
 
@@ -147,7 +152,8 @@ teardown() {
 \"seasonNumber\":1,
 \"formattedSeasonNum\":\"01\",
 \"episodeNumber\":5,
-\"formattedEpisodeNum\":\"05\"
+\"formattedEpisodeNum\":\"05\",
+\"extension\":\"mkv\"
 }"
 
 	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename "Sherlock_S01E17.mkv"
@@ -161,7 +167,8 @@ teardown() {
 \"seasonNumber\":1,
 \"formattedSeasonNum\":\"01\",
 \"episodeNumber\":17,
-\"formattedEpisodeNum\":\"17\"
+\"formattedEpisodeNum\":\"17\",
+\"extension\":\"mkv\"
 }"
 }
 
@@ -177,7 +184,8 @@ teardown() {
 \"seasonNumber\":2,
 \"formattedSeasonNum\":\"02\",
 \"episodeNumber\":18,
-\"formattedEpisodeNum\":\"18\"
+\"formattedEpisodeNum\":\"18\",
+\"extension\":\"mkv\"
 }"
 }
 
@@ -193,7 +201,8 @@ teardown() {
 \"seasonNumber\":2,
 \"formattedSeasonNum\":\"02\",
 \"episodeNumber\":18,
-\"formattedEpisodeNum\":\"18\"
+\"formattedEpisodeNum\":\"18\",
+\"extension\":\"mkv\"
 }"
 }
 
@@ -209,15 +218,16 @@ teardown() {
 \"seasonNumber\":2,
 \"formattedSeasonNum\":\"02\",
 \"episodeNumber\":18,
-\"formattedEpisodeNum\":\"18\"
+\"formattedEpisodeNum\":\"18\",
+\"extension\":\"mkv\"
 }"
 }
 
 @test "get-tv-info-from-filename INT : period character between series name and season identifier" {
-	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename "Sherlock Holmes.S03E04.mkv"
+	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename "Sherlock Holmes.S03E04.mp4"
 	assert_success
 	assert_output "{
-\"filename\":\"Sherlock Holmes.S03E04.mkv\",
+\"filename\":\"Sherlock Holmes.S03E04.mp4\",
 \"seriesId\":null,
 \"seriesName\":\"Sherlock Holmes\",
 \"formattedSeriesName\":\"Sherlock Holmes\",
@@ -225,15 +235,16 @@ teardown() {
 \"seasonNumber\":3,
 \"formattedSeasonNum\":\"03\",
 \"episodeNumber\":4,
-\"formattedEpisodeNum\":\"04\"
+\"formattedEpisodeNum\":\"04\",
+\"extension\":\"mp4\"
 }"
 }
 
 @test "get-tv-info-from-filename INT : space character between series name and season identifier" {
-	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename "Sherlock Holmes S03E04.mkv"
+	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename "Sherlock Holmes S03E04.avi"
 	assert_success
 	assert_output "{
-\"filename\":\"Sherlock Holmes S03E04.mkv\",
+\"filename\":\"Sherlock Holmes S03E04.avi\",
 \"seriesId\":null,
 \"seriesName\":\"Sherlock Holmes\",
 \"formattedSeriesName\":\"Sherlock Holmes\",
@@ -241,15 +252,16 @@ teardown() {
 \"seasonNumber\":3,
 \"formattedSeasonNum\":\"03\",
 \"episodeNumber\":4,
-\"formattedEpisodeNum\":\"04\"
+\"formattedEpisodeNum\":\"04\",
+\"extension\":\"avi\"
 }"
 }
 
 @test "get-tv-info-from-filename INT : dash character between series name and season identifier" {
-	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename "Sherlock Holmes-S03E04.mkv"
+	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename "Sherlock Holmes-S03E04.m4v"
 	assert_success
 	assert_output "{
-\"filename\":\"Sherlock Holmes-S03E04.mkv\",
+\"filename\":\"Sherlock Holmes-S03E04.m4v\",
 \"seriesId\":null,
 \"seriesName\":\"Sherlock Holmes\",
 \"formattedSeriesName\":\"Sherlock Holmes\",
@@ -257,6 +269,7 @@ teardown() {
 \"seasonNumber\":3,
 \"formattedSeasonNum\":\"03\",
 \"episodeNumber\":4,
-\"formattedEpisodeNum\":\"04\"
+\"formattedEpisodeNum\":\"04\",
+\"extension\":\"m4v\"
 }"
 }
