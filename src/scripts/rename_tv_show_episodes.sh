@@ -4,7 +4,6 @@
 ORIGINAL_MEDIA_DIR="$PWD/original-media"
 UNMATCHED_MEDIA_DIR="$PWD/unmatched-media"
 RENAMED_MEDIA_DIR="$PWD/renamed-media"
-TEMP_METADATA_DIR="$PWD/temp-metadata"
 
 #### Start in directory with media files; could be named in numerous ways
 shopt -s nullglob
@@ -77,7 +76,7 @@ do
 		seasonNumber=$(echo "$episodeInfo" | jq -r ".seasonNumber")
 		episodeNumber=$(echo "$episodeInfo" | jq -r ".episodeNumber")
 
-		episodeMetaData=$(tvdb-get-series-episode-details $seriesId $seasonNumber $episodeNumber)
+		episodeMetaData=$(tvdb-get-series-episode-details $seriesId $seasonNumber $episodeNumber --use-cache --update-cache)
 
 		if [[ "$episodeMetaData" == "null" ]]; then
 			ln "$ORIGINAL_MEDIA_DIR/$originalFilename" "$UNMATCHED_MEDIA_DIR/$originalFilename"

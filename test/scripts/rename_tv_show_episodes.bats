@@ -24,7 +24,7 @@ teardown() {
 	rm -rf "$MEDIA_TEST_DIRECTORY"
 }
 
-@test "rename_tv_show_episodes INT : non media file should not be touched" {
+@test "1 - rename_tv_show_episodes INT : non media file should not be touched" {
 	fakeFileName="fake-file.txt"
 	touch $fakeFileName
 
@@ -37,7 +37,7 @@ teardown() {
 	assert [ -e $fakeFileName ]
 }
 
-@test "rename_tv_show_episodes INT : cannot find series on tvdb should not try and rename show" {
+@test "2 - rename_tv_show_episodes INT : cannot find series on tvdb should not try and rename show" {
 	fakeFileName="StarWarsTheNextGeneration_S01E01.mkv"
 	touch "$fakeFileName"
 
@@ -55,7 +55,7 @@ Unable to rename the following files:
 	assert [ ! -e "$fakeFileName" ]
 }
 
-@test "rename_tv_show_episodes INT : should process .m4v, .mkv, .avi, .mp4 files" {
+@test "3 - rename_tv_show_episodes INT : should process .m4v, .mkv, .avi, .mp4 files" {
 	fakeFileName1="StarWarsTheNextGeneration_S01E01.mkv"
 	fakeFileName2="StarWarsTheNextGeneration_S01E01.m4v"
 	fakeFileName3="StarWarsTheNextGeneration_S01E01.mp4"
@@ -95,7 +95,7 @@ Unable to rename the following files:
 	assert [ ! -e "$fakeFileName4" ]
 }
 
-@test "rename_tv_show_episodes INT : series found, non existent season or episode should not try and rename show" {
+@test "4 - rename_tv_show_episodes INT : series found, non existent season or episode should not try and rename show" {
 	fakeFileName="StarTrekTheNextGeneration_S19E25.mkv"
 	touch "$fakeFileName"
 
@@ -113,7 +113,7 @@ Unable to rename the following files:
 	assert [ ! -e "$fakeFileName" ]
 }
 
-@test "rename_tv_show_episodes INT : series found and season and episode exist should rename show" {
+@test "5 - rename_tv_show_episodes INT : series found and season and episode exist should rename show" {
 	fakeFileName="StarTrekTheNextGeneration_S04E15.mkv"
 	touch "$fakeFileName"
 
@@ -131,7 +131,7 @@ Renamed the following files:
 	assert [ ! -e "$fakeFileName" ]
 }
 
-@test "rename_tv_show_episodes INT : should output series in alphabetical order, separated by new lines" {
+@test "6 - rename_tv_show_episodes INT : should output series in alphabetical order, separated by new lines" {
 	fakeFileName1="StarTrekTheNextGeneration_S04E15.mkv"
 	fakeFileName2="TheBigBangTheory_S10E16.m4v"
 	fakeFileName3="HowIMetYourMother_S03E02.mp4"
@@ -173,7 +173,7 @@ Renamed the following files:
 	assert [ ! -e "$fakeFileName4" ]
 }
 
-@test "rename_tv_show_episodes INT : should output episodes in season order then episode order" {
+@test "7 - rename_tv_show_episodes INT : should output episodes in season order then episode order" {
 	fakeFileName1="StarTrekTheNextGeneration_S04E15.mkv"
 	fakeFileName2="StarTrekTheNextGeneration_S03E18.mkv"
 	fakeFileName3="StarTrekTheNextGeneration_S04E08.mkv"
@@ -206,7 +206,7 @@ Renamed the following files:
 	assert [ ! -e "$fakeFileName3" ]
 }
 
-@test "rename_tv_show_episodes INT : some files matched, others not" {
+@test "8 - rename_tv_show_episodes INT : some files matched, others not" {
 	fakeFileName1="StarTrekTheNextGeneration_S04E15.mkv"
 	fakeFileName2="HowIMetYourFather_S03E18.mkv"
 	fakeFileName3="TheBigBangTheory_S04E08.m4v"
