@@ -6,19 +6,19 @@ load ../helpers/bats-assert/load
 
 UTILITIES_SRC_DIR="../../src/utilities";
 
-@test "tvdb-get-request UNIT : no api-token provided should error" {
+@test "1 - tvdb-get-request UNIT : no api-token provided should error" {
 	run "$UTILITIES_SRC_DIR"/tvdb-get-request
 	assert_failure
 	assert_output "ERROR: No API token provided."
 }
 
-@test "tvdb-get-request UNIT : no request url provided should error" {
+@test "2 - tvdb-get-request UNIT : no request url provided should error" {
 	run "$UTILITIES_SRC_DIR"/tvdb-get-request "fake-api-token"
 	assert_failure
 	assert_output "ERROR: No API request URL provided."
 }
 
-@test "tvdb-get-request INT" {
+@test "3 - tvdb-get-request INT" {
 	token=$("$UTILITIES_SRC_DIR"/tvdb-authenticate $TVDB_API_KEY)
 
 	run "$UTILITIES_SRC_DIR"/tvdb-get-request $token "/refresh_token"

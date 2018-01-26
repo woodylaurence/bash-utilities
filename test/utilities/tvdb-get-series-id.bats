@@ -15,14 +15,14 @@ teardown() {
 	PATH="$ORIGINAL_PATH_VARIABLE"
 }
 
-@test "tvdb-get-series-id UNIT : where no series search term provided should error" {
+@test "1 - tvdb-get-series-id UNIT : where no series search term provided should error" {
 	run "$UTILITIES_SRC_DIR"/tvdb-get-series-id
 
 	assert_failure
 	assert_output "ERROR: No series search term provided."
 }
 
-@test "tvdb-search-series INT : where series found" {
+@test "2 - tvdb-search-series INT : where series found" {
 	seriesSearchTerm="star wars deep space nine"
 	run "$UTILITIES_SRC_DIR"/tvdb-get-series-id "$seriesSearchTerm"
 
@@ -30,7 +30,7 @@ teardown() {
 	assert_output "{\"seriesSearchTerm\":\"$seriesSearchTerm\",\"seriesId\":null}"
 }
 
-@test "tvdb-search-series INT : where series found" {
+@test "3 - tvdb-search-series INT : where series found" {
 	seriesSearchTerm="star trek the next generation"
 	run "$UTILITIES_SRC_DIR"/tvdb-get-series-id "$seriesSearchTerm"
 
@@ -38,7 +38,7 @@ teardown() {
 	assert_output "{\"seriesSearchTerm\":\"$seriesSearchTerm\",\"seriesId\":71470}"
 }
 
-@test "tvdb-search-series INT : where multiple series found for search term should request input from user as to which series was requested" {
+@test "4 - tvdb-search-series INT : where multiple series found for search term should request input from user as to which series was requested" {
 	seriesSearchTerm="psych"
 	"$UTILITIES_SRC_DIR"/tvdb-get-series-id "$seriesSearchTerm"
 

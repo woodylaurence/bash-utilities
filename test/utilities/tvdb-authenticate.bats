@@ -24,25 +24,25 @@ teardown() {
 	fi
 }
 
-@test "tvdb-authenticate INT : no api-key provided" {
+@test "1 - tvdb-authenticate INT : no api-key provided" {
 	run "$UTILITIES_SRC_DIR"/tvdb-authenticate
 	assert_failure
 	assert_output "ERROR: no API key provided."
 }
 
-@test "tvdb-authenticate INT : providing invalid key should return no token" {
+@test "2 - tvdb-authenticate INT : providing invalid key should return no token" {
 	run "$UTILITIES_SRC_DIR"/tvdb-authenticate "wrong-key"
 	assert_success
 	assert_output "null"
 }
 
-@test "tvdb-authenticate INT : no cached token, providing valid key should return valid token" {
+@test "3 - tvdb-authenticate INT : no cached token, providing valid key should return valid token" {
 	run "$UTILITIES_SRC_DIR"/tvdb-authenticate "$TVDB_API_KEY"
 	assert_success
 	assert_output --regexp "^[A-Za-z0-9_.-]{464}$"
 }
 
-@test "tvdb-authenticate INT : cached token exists, providing valid key should return token from cache" {
+@test "4 - tvdb-authenticate INT : cached token exists, providing valid key should return token from cache" {
 	cachedTokenValue="fake-token-value"
 	echo "$cachedTokenValue" > "$CACHED_TOKEN_FILE"
 
@@ -51,7 +51,7 @@ teardown() {
 	assert_output "$cachedTokenValue"
 }
 
-@test "tvdb-authenticate INT : cached token exists and edited less than 24 hours ago should return token from cache" {
+@test "5 - tvdb-authenticate INT : cached token exists and edited less than 24 hours ago should return token from cache" {
 	cachedTokenValue="fake-token-value"
 	echo "$cachedTokenValue" > "$CACHED_TOKEN_FILE"
 	touch -d "23 hours ago" "$CACHED_TOKEN_FILE"
@@ -61,7 +61,7 @@ teardown() {
 	assert_output "$cachedTokenValue"
 }
 
-@test "tvdb-authenticate INT : cached token exists and edited 24 hours ago should return token from cache" {
+@test "6 - tvdb-authenticate INT : cached token exists and edited 24 hours ago should return token from cache" {
 	cachedTokenValue="fake-token-value"
 	echo "$cachedTokenValue" > "$CACHED_TOKEN_FILE"
 	touch -d "24 hours ago" "$CACHED_TOKEN_FILE"

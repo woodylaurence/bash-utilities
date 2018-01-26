@@ -6,7 +6,7 @@ load ../helpers/bats-assert/load
 
 UTILITIES_SRC_DIR="../../src/utilities";
 
-@test "getDateWithMonthAsNumber UNIT : short month format" {
+@test "1 - getDateWithMonthAsNumber UNIT : short month format" {
 	shortMonth="Jun"
 	expectedMonthAsNumber="49"
 
@@ -19,7 +19,7 @@ UTILITIES_SRC_DIR="../../src/utilities";
 	unstub getMonthAsNumber
 }
 
-@test "getDateWithMonthAsNumber UNIT : long month format" {
+@test "2 - getDateWithMonthAsNumber UNIT : long month format" {
 	longMonth="February"
 	expectedMonthAsNumber="876"
 
@@ -32,12 +32,12 @@ UTILITIES_SRC_DIR="../../src/utilities";
 	unstub getMonthAsNumber
 }
 
-@test "getDateWithMonthAsNumber INT : short month format" {
+@test "3 - getDateWithMonthAsNumber INT : short month format" {
 	actual=$("$UTILITIES_SRC_DIR"/getDateWithMonthAsNumber "22/Apr/90")
 	assert_equal "$actual" "220490"
 }
 
-@test "getDateWithMonthAsNumber INT : long month format" {
+@test "4 - getDateWithMonthAsNumber INT : long month format" {
 	actual=$("$UTILITIES_SRC_DIR"/getDateWithMonthAsNumber "18/July/78")
 	assert_equal "$actual" "180778"
 }

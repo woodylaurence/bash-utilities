@@ -15,7 +15,7 @@ teardown() {
 	PATH="$ORIGINAL_PATH_VARIABLE"
 }
 
-@test "get-tv-info-from-filename INT : filename doesnt have series name" {
+@test "1 - get-tv-info-from-filename INT : filename doesnt have series name" {
 	fakeFilename="S01E01.mkv"
 
 	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename $fakeFilename
@@ -23,7 +23,7 @@ teardown() {
 	assert_output "ERROR: Filename '$fakeFilename' cannot be parsed as tv episode"
 }
 
-@test "get-tv-info-from-filename INT : filename has invalid or missing season number" {
+@test "2 - get-tv-info-from-filename INT : filename has invalid or missing season number" {
 	fileNameWithMissingSeasonIdentifier="StarTrek_E01.mkv"
 	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename $fileNameWithMissingSeasonNumber
 	assert_failure
@@ -40,7 +40,7 @@ teardown() {
 	assert_output "ERROR: Filename '$fileNameWithNonNumericSeasonNumber' cannot be parsed as tv episode"
 }
 
-@test "get-tv-info-from-filename INT : filename has invalid or missing episode number" {
+@test "3 - get-tv-info-from-filename INT : filename has invalid or missing episode number" {
 	fileNameWithMissingEpisodeIdentifier="StarTrek_S01.mkv"
 	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename $fileNameWithMissingEpisodeIdentifier
 	assert_failure
@@ -57,7 +57,7 @@ teardown() {
 	assert_output "ERROR: Filename '$fileNameWithNonNumericSeasonNumber' cannot be parsed as tv episode"
 }
 
-@test "get-tv-info-from-filename INT : filename has single digit season" {
+@test "4 - get-tv-info-from-filename INT : filename has single digit season" {
 	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename "Psych_S1E19.mkv"
 	assert_success
 	assert_output "{
@@ -106,7 +106,7 @@ teardown() {
 }"
 }
 
-@test "get-tv-info-from-filename INT : season-identifier is lowercase" {
+@test "5 - get-tv-info-from-filename INT : season-identifier is lowercase" {
 	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename "StarTrekTheNextGeneration_s02E18.mkv"
 	assert_success
 	assert_output "{
@@ -123,7 +123,7 @@ teardown() {
 }"
 }
 
-@test "get-tv-info-from-filename INT : filename has single digit episode" {
+@test "6 - get-tv-info-from-filename INT : filename has single digit episode" {
 	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename "Sherlock_S01E5.mkv"
 	assert_success
 	assert_output "{
@@ -140,7 +140,7 @@ teardown() {
 }"
 }
 
-@test "get-tv-info-from-filename INT : filename has two digit episode" {
+@test "7 - get-tv-info-from-filename INT : filename has two digit episode" {
 	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename "Sherlock_S01E05.mkv"
 	assert_success
 	assert_output "{
@@ -172,7 +172,7 @@ teardown() {
 }"
 }
 
-@test "get-tv-info-from-filename INT : episode-identifier is lowercase" {
+@test "8 - get-tv-info-from-filename INT : episode-identifier is lowercase" {
 	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename "StarTrekTheNextGeneration_S02e18.mkv"
 	assert_success
 	assert_output "{
@@ -189,7 +189,7 @@ teardown() {
 }"
 }
 
-@test "get-tv-info-from-filename INT : series has multiple words" {
+@test "9 - get-tv-info-from-filename INT : series has multiple words" {
 	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename "StarTrekTheNextGeneration_S02E18.mkv"
 	assert_success
 	assert_output "{
@@ -206,7 +206,7 @@ teardown() {
 }"
 }
 
-@test "get-tv-info-from-filename INT : series has words separated by spaces, periods, dashes or underscores" {
+@test "10 - get-tv-info-from-filename INT : series has words separated by spaces, periods, dashes or underscores" {
 	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename "Star.Trek_The-Next   Generation_S02E18.mkv"
 	assert_success
 	assert_output "{
@@ -223,7 +223,7 @@ teardown() {
 }"
 }
 
-@test "get-tv-info-from-filename INT : period character between series name and season identifier" {
+@test "11 - get-tv-info-from-filename INT : period character between series name and season identifier" {
 	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename "Sherlock Holmes.S03E04.mp4"
 	assert_success
 	assert_output "{
@@ -240,7 +240,7 @@ teardown() {
 }"
 }
 
-@test "get-tv-info-from-filename INT : space character between series name and season identifier" {
+@test "12 - get-tv-info-from-filename INT : space character between series name and season identifier" {
 	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename "Sherlock Holmes S03E04.avi"
 	assert_success
 	assert_output "{
@@ -257,7 +257,7 @@ teardown() {
 }"
 }
 
-@test "get-tv-info-from-filename INT : dash character between series name and season identifier" {
+@test "13 - get-tv-info-from-filename INT : dash character between series name and season identifier" {
 	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename "Sherlock Holmes-S03E04.m4v"
 	assert_success
 	assert_output "{
