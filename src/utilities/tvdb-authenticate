@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CACHED_TOKEN_DIRECTORY="/tmp/usr"
+CACHED_TOKEN_DIRECTORY="/tmp/usr/tvdb-cache"
 CACHED_TOKEN_FILE="$CACHED_TOKEN_DIRECTORY/.tvdb-token-cache"
 
 if [[ -z $1 ]]; then

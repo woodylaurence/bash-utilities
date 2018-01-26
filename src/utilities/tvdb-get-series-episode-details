@@ -1,27 +1,69 @@
 #!/bin/bash
 
-#TODO Add in caching
-#	- Save list of series information to cached file; array of series with information
-#	- Add option to ignore cache which always goes to web apikey
-#	- Add option to clear cache which always clears cache
+CACHE_DIRECTORY="/tmp/usr/tvdb-cache"
+mkdir -p "$CACHE_DIRECTORY"
 
 if [[ -z $1 ]]; then
 	echo "ERROR: No series id provided."
 	exit 1
 fi
 
-#Query episode information for requested series
-apiEndpoint="/series/$1/episodes"
+# Execute getopt on the arguments passed to this program, identified by the special character $@
+PARSED_OPTIONS=$(getopt -n "$0"  -o cxu: --long "use-cache,ignore-cache,update-cache"  -- "$@")
+eval set -- "$PARSED_OPTIONS"
+
+# Loop through arguments to find options
+useCache=true
+updateCache=false
+while true;
+do
+	case "$1" in
+		-c|--use-cache)
+			useCache=true
+			shift;;
+
+		-x|--ignore-cache)
+			useCache=false
+			shift;;
+
+		-u|--update-cache)
+			updateCache=true
+			shift;;
+
+		--)
+			shift
+			break;;
+		esac
+done
+
+jqEpisodeDetailsQuery="."
 if [[ -n $2 ]]; then
-	apiEndpoint="$apiEndpoint/query?airedSeason=$2"
-	if [[ -n $3 ]]; then
-		apiEndpoint="${apiEndpoint}&airedEpisode=$3"
+	if [[ -z $3 ]]; then
+		jqEpisodeDetailsQuery="map(select(.season == $2))"
+	else
+		jqEpisodeDetailsQuery="map(select(.season == $2 and .episode == $3))"
+	fi
+fi
+jqEpisodeDetailsQuery="$jqEpisodeDetailsQuery | if any then . else 	null end"
+
+#If using the cache, look for a file for the series
+#If the cache contains the episode we're looking for, return it
+if $useCache; then
+	if [[ -e "$CACHE_DIRECTORY/.$1" ]]; then
+		# cat "$CACHE_DIRECTORY/.$1"
+		episodeDetails=$(cat "$CACHE_DIRECTORY/.$1" | jq -c "$jqEpisodeDetailsQuery")
+		if [[ "$episodeDetails" != "null" ]]; then
+			echo "$episodeDetails" | jq -c "."
+			exit
+		fi
 	fi
 fi
 
-#Authenticate with TVDB
-token=$(tvdb-authenticate $TVDB_API_KEY)
+#Query episode information for requested series
+apiEndpoint="/series/$1/episodes"
 
+#Authenticate with TVDB and get full series details
+token=$(tvdb-authenticate $TVDB_API_KEY)
 episodeDetailResultsJson=$(tvdb-get-request $token "$apiEndpoint")
 jqQuery="if has(\"data\")
 		 then
@@ -29,4 +71,13 @@ jqQuery="if has(\"data\")
 		 else
 			 null
 		 end"
-echo "$episodeDetailResultsJson" | jq -cr "$jqQuery"
+episodeDetails=$(echo "$episodeDetailResultsJson" | jq -c "$jqQuery")
+
+# echo "updateCache = $updateCache"
+#If saving to the cache, dump series details into cached file
+if $updateCache; then
+	# echo "updating cache, using file $CACHE_DIRECTORY/.$1"
+	echo "$episodeDetails" > "$CACHE_DIRECTORY"/.$1
+fi
+
+echo "$episodeDetails" | jq -c "$jqEpisodeDetailsQuery"

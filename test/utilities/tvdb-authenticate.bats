@@ -5,7 +5,7 @@ load ../helpers/bats-support/load
 load ../helpers/bats-assert/load
 
 UTILITIES_SRC_DIR="../../src/utilities";
-CACHED_TOKEN_FILE="/tmp/usr/.tvdb-token-cache"
+CACHED_TOKEN_FILE="/tmp/usr/tvdb-cache/.tvdb-token-cache"
 
 setup() {
 	if [[ -z "$TVDB_API_KEY" ]]; then
