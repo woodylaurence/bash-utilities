@@ -5,6 +5,24 @@ load ../helpers/bats-support/load
 load ../helpers/bats-assert/load
 
 UTILITIES_SRC_DIR="../../src/utilities";
+CACHED_TOKEN_FILE="/tmp/usr/tvdb-cache/.tvdb-token-cache"
+
+setup() {
+	if [[ -z "$TVDB_API_KEY" ]]; then
+		echo "TVDB_API_KEY not found in environment variables..."
+		assert_failure
+	fi
+
+	if [[ -e "$CACHED_TOKEN_FILE" ]]; then
+		mv "$CACHED_TOKEN_FILE" "${CACHED_TOKEN_FILE}.moved"
+	fi
+}
+
+teardown() {
+	if [[ -e "${CACHED_TOKEN_FILE}.moved" ]]; then
+		mv "${CACHED_TOKEN_FILE}.moved" "$CACHED_TOKEN_FILE"
+	fi
+}
 
 @test "1 - tvdb-get-request UNIT : no api-token provided should error" {
 	run "$UTILITIES_SRC_DIR"/tvdb-get-request
