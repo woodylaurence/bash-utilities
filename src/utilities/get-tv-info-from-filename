@@ -7,7 +7,7 @@ if [[ ! "$1" =~ $tvEpisodeRegex ]]; then
 fi
 
 seriesName=$(echo "$1" | sed -r "s/$tvEpisodeRegex/\1/")
-seasonNumber=$(echo $1 | sed -r "s/$tvEpisodeRegex/\2/" | sed "s/^0*//")
+seasonNumber=$(echo $1 | sed -r "s/$tvEpisodeRegex/\2/" | sed -r "s/^0?([0-9]+)/\1/")
 formattedSeasonNum=$(printf "%02d\n" $seasonNumber)
 episodeNumber=$(echo $1 | sed -r "s/$tvEpisodeRegex/\3/" | sed "s/^0*//")
 formattedEpisodeNum=$(printf "%02d\n" $episodeNumber)
