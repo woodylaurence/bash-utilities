@@ -5,19 +5,33 @@ ORIGINAL_MEDIA_DIR="$PWD/original-media"
 UNMATCHED_MEDIA_DIR="$PWD/unmatched-media"
 RENAMED_MEDIA_DIR="$PWD/renamed-media"
 
+#Ensure the current directory doesn't already have outstanding renaming output
+if [[ -e "$ORIGINAL_MEDIA_DIR" ]]; then
+	echo "ERROR: original-media folder exists in current directory."
+	exit 1
+fi
+if [[ -e "$UNMATCHED_MEDIA_DIR" ]]; then
+	echo "ERROR: unmatched-media folder exists in current directory."
+	exit 1
+fi
+if [[ -e "$RENAMED_MEDIA_DIR" ]]; then
+	echo "ERROR: renamed-media folder exists in current directory."
+	exit 1
+fi
+
 #### Start in directory with media files; could be named in numerous ways
 shopt -s nullglob
 allMediaFiles=(*.{mkv,m4v,mp4,avi})
 
 if [[ ${#allMediaFiles[@]} -eq 0 ]]; then
-	echo "No media files found in current directory."
-	exit
+	echo "ERROR: No media files found in current directory."
+	exit 1
 fi
 
 #Make Directories
-mkdir -p "$ORIGINAL_MEDIA_DIR"
-mkdir -p "$UNMATCHED_MEDIA_DIR"
-mkdir -p "$RENAMED_MEDIA_DIR"
+mkdir "$ORIGINAL_MEDIA_DIR"
+mkdir "$UNMATCHED_MEDIA_DIR"
+mkdir "$RENAMED_MEDIA_DIR"
 
 #### Copy (link to save time) these files to a staging area and rename to standard format
 for file in "${allMediaFiles[@]}"

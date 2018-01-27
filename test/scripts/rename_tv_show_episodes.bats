@@ -24,12 +24,36 @@ teardown() {
 	rm -rf "$MEDIA_TEST_DIRECTORY"
 }
 
-@test "1 - rename_tv_show_episodes INT : non media file should not be touched" {
-	fakeFileName="fake-file.txt"
-	touch $fakeFileName
+@test "1 - rename_tv_show_episodes UNIT : original-media folder exists should error" {
+	mkdir original-media
 
 	run "$SCRIPTS_SRC_DIR"/rename_tv_show_episodes.sh
-	assert_success
+	assert_failure
+	assert_output "ERROR: original-media folder exists in current directory."
+}
+
+@test "2 - rename_tv_show_episodes UNIT : unmatched-media folder exists should error" {
+	mkdir unmatched-media
+
+	run "$SCRIPTS_SRC_DIR"/rename_tv_show_episodes.sh
+	assert_failure
+	assert_output "ERROR: unmatched-media folder exists in current directory."
+}
+
+@test "3 - rename_tv_show_episodes UNIT : renamed-media folder exists should error" {
+	mkdir renamed-media
+
+	run "$SCRIPTS_SRC_DIR"/rename_tv_show_episodes.sh
+	assert_failure
+	assert_output "ERROR: renamed-media folder exists in current directory."
+}
+
+@test "4 - rename_tv_show_episodes UNIT : no media files in directory" {
+	touch "fake-file.txt"
+
+	run "$SCRIPTS_SRC_DIR"/rename_tv_show_episodes.sh
+	assert_failure
+	assert_output "ERROR: No media files found in current directory."
 
 	assert [ ! -e original-media/ ]
 	assert [ ! -e unmatched-media/ ]
@@ -37,7 +61,7 @@ teardown() {
 	assert [ -e $fakeFileName ]
 }
 
-@test "2 - rename_tv_show_episodes INT : cannot find series on tvdb should not try and rename show" {
+@test "5 - rename_tv_show_episodes INT : cannot find series on tvdb should not try and rename show" {
 	fakeFileName="StarWarsTheNextGeneration_S01E01.mkv"
 	touch "$fakeFileName"
 
@@ -55,7 +79,7 @@ Unable to rename the following files:
 	assert [ ! -e "$fakeFileName" ]
 }
 
-@test "3 - rename_tv_show_episodes INT : should process .m4v, .mkv, .avi, .mp4 files" {
+@test "6 - rename_tv_show_episodes INT : should process .m4v, .mkv, .avi, .mp4 files" {
 	fakeFileName1="StarWarsTheNextGeneration_S01E01.mkv"
 	fakeFileName2="StarWarsTheNextGeneration_S01E01.m4v"
 	fakeFileName3="StarWarsTheNextGeneration_S01E01.mp4"
@@ -95,7 +119,7 @@ Unable to rename the following files:
 	assert [ ! -e "$fakeFileName4" ]
 }
 
-@test "4 - rename_tv_show_episodes INT : series found, non existent season or episode should not try and rename show" {
+@test "7 - rename_tv_show_episodes INT : series found, non existent season or episode should not try and rename show" {
 	fakeFileName="StarTrekTheNextGeneration_S19E25.mkv"
 	touch "$fakeFileName"
 
@@ -113,7 +137,7 @@ Unable to rename the following files:
 	assert [ ! -e "$fakeFileName" ]
 }
 
-@test "5 - rename_tv_show_episodes INT : series found and season and episode exist should rename show" {
+@test "8 - rename_tv_show_episodes INT : series found and season and episode exist should rename show" {
 	fakeFileName="StarTrekTheNextGeneration_S04E15.mkv"
 	touch "$fakeFileName"
 
@@ -131,7 +155,7 @@ Renamed the following files:
 	assert [ ! -e "$fakeFileName" ]
 }
 
-@test "6 - rename_tv_show_episodes INT : should output series in alphabetical order, separated by new lines" {
+@test "9 - rename_tv_show_episodes INT : should output series in alphabetical order, separated by new lines" {
 	fakeFileName1="StarTrekTheNextGeneration_S04E15.mkv"
 	fakeFileName2="TheBigBangTheory_S10E16.m4v"
 	fakeFileName3="HowIMetYourMother_S03E02.mp4"
@@ -173,7 +197,7 @@ Renamed the following files:
 	assert [ ! -e "$fakeFileName4" ]
 }
 
-@test "7 - rename_tv_show_episodes INT : should output episodes in season order then episode order" {
+@test "10 - rename_tv_show_episodes INT : should output episodes in season order then episode order" {
 	fakeFileName1="StarTrekTheNextGeneration_S04E15.mkv"
 	fakeFileName2="StarTrekTheNextGeneration_S03E18.mkv"
 	fakeFileName3="StarTrekTheNextGeneration_S04E08.mkv"
@@ -206,7 +230,7 @@ Renamed the following files:
 	assert [ ! -e "$fakeFileName3" ]
 }
 
-@test "8 - rename_tv_show_episodes INT : some files matched, others not" {
+@test "11 - rename_tv_show_episodes INT : some files matched, others not" {
 	fakeFileName1="StarTrekTheNextGeneration_S04E15.mkv"
 	fakeFileName2="HowIMetYourFather_S03E18.mkv"
 	fakeFileName3="TheBigBangTheory_S04E08.m4v"
