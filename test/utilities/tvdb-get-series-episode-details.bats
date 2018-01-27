@@ -172,3 +172,15 @@ teardown() {
 	cachedFileDetails=$(cat "$CACHE_DIRECTORY/.78874")
 	assert [ "$cachedFileDetails" == "[{\"season\":1,\"episode\":1,\"name\":\"The Train Job\"},{\"season\":0,\"episode\":1,\"name\":\"Serenity\"},{\"season\":1,\"episode\":2,\"name\":\"Bushwhacked\"},{\"season\":0,\"episode\":2,\"name\":\"Here’s How It Was: The Making of “Firefly”\"},{\"season\":1,\"episode\":3,\"name\":\"Our Mrs. Reynolds\"},{\"season\":0,\"episode\":3,\"name\":\"Done the Impossible\"},{\"season\":1,\"episode\":4,\"name\":\"Jaynestown\"},{\"season\":0,\"episode\":4,\"name\":\"Browncoats Unite\"},{\"season\":1,\"episode\":5,\"name\":\"Out of Gas\"},{\"season\":1,\"episode\":6,\"name\":\"Shindig\"},{\"season\":1,\"episode\":7,\"name\":\"Safe\"},{\"season\":1,\"episode\":8,\"name\":\"Ariel\"},{\"season\":1,\"episode\":9,\"name\":\"War Stories\"},{\"season\":1,\"episode\":10,\"name\":\"Objects in Space\"},{\"season\":1,\"episode\":11,\"name\":\"Serenity\"},{\"season\":1,\"episode\":12,\"name\":\"Heart of Gold\"},{\"season\":1,\"episode\":13,\"name\":\"Trash\"},{\"season\":1,\"episode\":14,\"name\":\"The Message\"}]" ]
 }
+
+@test "16 - tvdb-get-series-episode-details INT : updating cache and where requesting episode on second page of results, should return episode details as well as saving complete series to cache" {
+	run "$UTILITIES_SRC_DIR"/tvdb-get-series-episode-details 71470 7 24 --ignore-cache --update-cache
+	assert_success
+	assert_output "[{\"season\":7,\"episode\":24,\"name\":\"Preemptive Strike\"}]"
+
+	assert [ -e "$CACHE_DIRECTORY/.71470" ]
+
+	run cat "$CACHE_DIRECTORY/.71470"
+	assert_output --regexp "\{\"season\":1,\"episode\":1,\"name\":\"Encounter at Farpoint \(1\)\"\}"
+	assert_output --regexp "\{\"season\":7,\"episode\":24,\"name\":\"Preemptive Strike\"\}"
+}

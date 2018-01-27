@@ -59,24 +59,29 @@ if $useCache; then
 	fi
 fi
 
-#Query episode information for requested series
-apiEndpoint="/series/$1/episodes"
-
-#Authenticate with TVDB and get full series details
 token=$(tvdb-authenticate $TVDB_API_KEY)
-episodeDetailResultsJson=$(tvdb-get-request $token "$apiEndpoint")
-jqQuery="if has(\"data\")
-		 then
-			 [.data[] | { season: .airedSeason, episode: .airedEpisodeNumber, name: .episodeName}]
-		 else
-			 null
-		 end"
-episodeDetails=$(echo "$episodeDetailResultsJson" | jq -c "$jqQuery")
 
-# echo "updateCache = $updateCache"
+#Query episode information for requested series
+episodeDetailsApiEndpoint="/series/$1/episodes"
+jqExtractEpisodeDetailsQuery="[.data[] | { season: .airedSeason, episode: .airedEpisodeNumber, name: .episodeName}]"
+jqNextPageQuery=".links.next"
+
+#Get full series details from TVDB
+nextPage=1
+episodeDetails="[]"
+
+while [[ "$nextPage" != "null" ]]
+do
+	episodeDetailForPageResultsJson=$(tvdb-get-request $token "${episodeDetailsApiEndpoint}?page=$nextPage")
+	episodeDetailsForPage=$(echo "$episodeDetailForPageResultsJson" | jq -c "$jqExtractEpisodeDetailsQuery")
+	nextPage=$(echo "$episodeDetailForPageResultsJson" | jq -c "$jqNextPageQuery" | sed "s/\"//g")
+
+	jqAppendToArrayQuery=". += $episodeDetailsForPage"
+	episodeDetails=$(echo "$episodeDetails" | jq -c "$jqAppendToArrayQuery")
+done
+
 #If saving to the cache, dump series details into cached file
 if $updateCache; then
-	# echo "updating cache, using file $CACHE_DIRECTORY/.$1"
 	echo "$episodeDetails" > "$CACHE_DIRECTORY"/.$1
 fi
 
