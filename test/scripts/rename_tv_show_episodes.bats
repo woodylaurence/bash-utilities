@@ -11,7 +11,7 @@ MEDIA_TEST_DIRECTORY="media-test-directory"
 ORIGINAL_PATH_VARIABLE=$PATH
 
 setup() {
-	PATH="$PATH:$UTILITIES_SRC_DIR"
+	PATH=$(echo "$PATH" | sed -r "s|/usr/local/bin|$UTILITIES_SRC_DIR|")
 
 	mkdir $MEDIA_TEST_DIRECTORY
 	pushd "$MEDIA_TEST_DIRECTORY" > /dev/null

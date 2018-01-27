@@ -8,7 +8,7 @@ UTILITIES_SRC_DIR="../../src/utilities"
 ORIGINAL_PATH_VARIABLE=$PATH
 
 setup() {
-	PATH="$PATH:$UTILITIES_SRC_DIR"
+	PATH=PATH=$(echo "$PATH" | sed -r "s|/usr/local/bin|$UTILITIES_SRC_DIR|")
 }
 
 teardown() {
@@ -125,7 +125,7 @@ teardown() {
 	run "$UTILITIES_SRC_DIR"/get-tv-info-from-filename "Psych_S00E19.mkv"
 	assert_success
 	assert_output "{
-\"filename\":\"Psych_S0E19.mkv\",
+\"filename\":\"Psych_S00E19.mkv\",
 \"seriesId\":null,
 \"seriesName\":\"Psych\",
 \"formattedSeriesName\":\"Psych\",

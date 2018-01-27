@@ -8,7 +8,7 @@ UTILITIES_SRC_DIR="../../src/utilities"
 ORIGINAL_PATH_VARIABLE=$PATH
 
 setup() {
-	PATH="$PATH:$UTILITIES_SRC_DIR"
+	PATH=PATH=$(echo "$PATH" | sed -r "s|/usr/local/bin|$UTILITIES_SRC_DIR|")
 }
 
 teardown() {

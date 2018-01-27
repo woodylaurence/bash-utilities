@@ -10,7 +10,7 @@ CACHE_DIRECTORY="/tmp/usr/tvdb-cache"
 TMP_STORAGE_DIRECTORY="/tmp/usr/tmp_store"
 
 setup() {
-	PATH="$PATH:$UTILITIES_SRC_DIR"
+	PATH=PATH=$(echo "$PATH" | sed -r "s|/usr/local/bin|$UTILITIES_SRC_DIR|")
 	mkdir -p "$TMP_STORAGE_DIRECTORY"
 
 	mkdir -p "$CACHE_DIRECTORY"
