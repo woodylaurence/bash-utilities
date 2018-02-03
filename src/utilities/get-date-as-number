@@ -1,0 +1,48 @@
+#!/bin/bash
+
+if [[ -z "$1" || "$1" != "-f" ]]; then
+	echo "ERROR: date format not supplied"
+	exit 1
+fi
+
+if [[ -z "$3" ]]; then
+	echo "ERROR: date not supplied"
+	exit 1
+fi
+
+dayMonthYearDate=""
+while getopts ":f:" opt
+do
+	case $opt in
+		f )
+			case "$OPTARG" in
+				"dd-mm-yy"|"dd-mm-yyyy")
+					dayMonthYearDate="$3" ;;
+				"dd-MM-yy"|"dd-MMM-yy"|"dd-MM-yyyy"|"dd-MMM-yyyy")
+					monthFromDateRegex="[0-9]{2}[ /-]([A-Za-z]{3,})[ /-][0-9]{2,4}"
+					month=$(echo "$3" | sed -r "s|$monthFromDateRegex|\1|")
+					monthAsNum=$(getMonthAsNumber "$month")
+					dayMonthYearDate=$(echo "$3" | sed "s|$month|$monthAsNum|") ;;
+				"mm-dd-yy"|"mm-dd-yyyy")
+					monthDayYearRegex="([0-9]{2})[ /-]([0-9]{2})[ /-]([0-9]{2})"
+					dayMonthYearDate=$(echo "$3" | sed -r "s|$monthDayYearRegex|\2-\1-\3|") ;;
+				"yyyy-mm-dd")
+					yearMonthDayRegex="([0-9]{4})[ /-]([0-9]{2})[ /-]([0-9]{2})"
+					dayMonthYearDate=$(echo "$3" | sed -r "s|$yearMonthDayRegex|\3-\2-\1|") ;;
+				*)
+					echo "ERROR: date format not valid"
+					exit 1
+			esac ;;
+	esac
+done
+
+dayMonthYearDateRegex="([0-9]{2})[ /-]([0-9]{2})[ /-]([0-9]{2,4})"
+year=$(echo "$dayMonthYearDate" | sed -r "s|$dayMonthYearDateRegex|\3|")
+month=$(echo "$dayMonthYearDate" | sed -r "s|$dayMonthYearDateRegex|\2|")
+day=$(echo "$dayMonthYearDate" | sed -r "s|$dayMonthYearDateRegex|\1|")
+
+if [[ $(echo ${#year}) -eq "2" ]]; then
+	year="20$year"
+fi
+
+echo "${year}${month}${day}"
