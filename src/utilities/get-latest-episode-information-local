@@ -1,0 +1,28 @@
+#!/bin/bash
+
+if [[ -z "$1" ]]; then
+	echo "ERROR: no directory to search provided"
+	exit 1
+fi
+if [[ ! -e "$1" ]]; then
+	echo "ERROR: supplied directory does not exist"
+	exit 1
+fi
+if [[ -z "$2" ]]; then
+	echo "ERROR: no series name provided"
+	exit 1
+fi
+
+if [[ -e "$1/$2/" ]]; then
+	pushd "$1/$2/" > /dev/null
+	latestSeason=$(ls | sort -n -t " " -k 2 | tail -n 1 | sed -r "s/Season ([0-9]+)/\1/");
+	if [[ -e "Season $latestSeason/" ]]; then
+		latestEpisode=$(ls "Season $latestSeason" | sort -n | tail -n 1 | sed -r "s/^0?([0-9]{1,2}).*/\1/")
+	fi
+	popd > /dev/null
+fi
+
+: "${latestSeason:=0}"
+: "${latestEpisode:=0}"
+
+echo "{\"series\":\"$2\",\"latestSeason\":$latestSeason,\"latestEpisode\":$latestEpisode}"
