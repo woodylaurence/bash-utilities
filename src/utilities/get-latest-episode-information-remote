@@ -1,0 +1,19 @@
+#!/bin/bash
+if [[ -z "$1" ]]; then
+	echo "ERROR: no remote server address provided"
+	exit 1
+fi
+if [[ -z "$2" ]]; then
+	echo "ERROR: no directory provided"
+	exit 1
+fi
+if [[ -z "$3" ]]; then
+	echo "ERROR: no series name provided"
+	exit 1
+fi
+
+safeDirectoryName=$(echo "$2" | sed "s| |\\\ |g")
+safeSeriesName=$(echo "$3" | sed "s| |\\\ |g")
+
+executableDirectory="/usr/local/bin"
+ssh "$1" "bash -s" < $executableDirectory/get-latest-episode-information-local "$safeDirectoryName" "$safeSeriesName"
