@@ -63,7 +63,7 @@ token=$(tvdb-authenticate $TVDB_API_KEY)
 
 #Query episode information for requested series
 episodeDetailsApiEndpoint="/series/$1/episodes"
-jqExtractEpisodeDetailsQuery="[.data[] | { season: .airedSeason, episode: .airedEpisodeNumber, name: .episodeName}]"
+jqExtractEpisodeDetailsQuery="[.data[] | { season: .airedSeason, episode: .airedEpisodeNumber, name: .episodeName, airDate: .firstAired}]"
 jqNextPageQuery=".links.next"
 
 #Get full series details from TVDB
