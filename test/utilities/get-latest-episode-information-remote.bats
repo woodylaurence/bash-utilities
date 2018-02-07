@@ -11,8 +11,8 @@ UTILITIES_SRC_DIR="../../src/utilities"
 TEMP_MEDIA_DIRECTORY=$(readlink -f "./temp directory")
 
 setup() {
-	if [[ -z "$LOCAL_IP" ]]; then
-		assert_failure "LOCAL_IP variable is not set."
+	if [[ -z "$LOCAL_HOST" ]]; then
+		assert_failure "LOCAL_HOST variable is not set."
 	fi
 
 	PATH=$(echo "$PATH" | sed -r "s|/usr/local/bin|$UTILITIES_SRC_DIR|")
@@ -32,19 +32,19 @@ teardown() {
 }
 
 @test "2 - get-latest-episode-information-remote UNIT : where no directory provided should error" {
-	run "$UTILITIES_SRC_DIR"/get-latest-episode-information-remote "laurence@$LOCAL_IP"
+	run "$UTILITIES_SRC_DIR"/get-latest-episode-information-remote "$LOCAL_HOST"
 	assert_failure
 	assert_output "ERROR: no directory provided"
 }
 
 @test "3 - get-latest-episode-information-remote UNIT : where no series name provided should error" {
-	run "$UTILITIES_SRC_DIR"/get-latest-episode-information-remote "laurence@$LOCAL_IP" "$TEMP_MEDIA_DIRECTORY"
+	run "$UTILITIES_SRC_DIR"/get-latest-episode-information-remote "$LOCAL_HOST" "$TEMP_MEDIA_DIRECTORY"
 	assert_failure
 	assert_output "ERROR: no series name provided"
 }
 
 @test "4 - get-latest-episode-information-remote UNIT : where directory does not exist on remote server should error" {
-	run "$UTILITIES_SRC_DIR"/get-latest-episode-information-remote "laurence@$LOCAL_IP" "/some/directory/that/doesnt/exist" "Psych"
+	run "$UTILITIES_SRC_DIR"/get-latest-episode-information-remote "$LOCAL_HOST" "/some/directory/that/doesnt/exist" "Psych"
 	assert_failure
 	assert_output "ERROR: supplied directory does not exist"
 }
@@ -70,7 +70,7 @@ teardown() {
 	touch "$TEMP_MEDIA_DIRECTORY/West Wing/Season 2/04 File3.mp4"
 	touch "$TEMP_MEDIA_DIRECTORY/West Wing/Season 3/01 File4.mp4"
 
-	run "$UTILITIES_SRC_DIR"/get-latest-episode-information-remote "laurence@$LOCAL_IP" "$TEMP_MEDIA_DIRECTORY" "West Wing"
+	run "$UTILITIES_SRC_DIR"/get-latest-episode-information-remote "$LOCAL_HOST" "$TEMP_MEDIA_DIRECTORY" "West Wing"
 	assert_success
 	assert_output "{\"series\":\"West Wing\",\"latestSeason\":3,\"latestEpisode\":1}"
 }
