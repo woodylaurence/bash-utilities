@@ -1,5 +1,7 @@
 #!/bin/bash
 
+CACHED_SERIES_NAME_TO_ID_FILE="/tmp/usr/tvdb-cache/.series-name-id-cache"
+
 if [[ -z $1 ]]; then
 	echo "ERROR: No series search term provided."
 	exit 1
@@ -19,6 +21,22 @@ if [[ "$numSeriesFound" -eq "0" ]]; then
 elif [[ "$numSeriesFound" -eq "1" ]]; then
 	echo "$seriesSearchResultsJson" | jq -cr ".[0] | { seriesSearchTerm: \"$1\", seriesId: .seriesId }" > "$outputStream"
 else
+	if [[ -e "$CACHED_SERIES_NAME_TO_ID_FILE" ]]; then
+		jqSelectCachedSeriesIdQuery="if \
+										any(.seriesSearchTerm == \"$1\") \
+									then \
+										.[] | select(.seriesSearchTerm == \"$1\") \
+									else \
+										null \
+									end"
+
+		cachedSeriesId=$(cat "$CACHED_SERIES_NAME_TO_ID_FILE" | jq -c "$jqSelectCachedSeriesIdQuery")
+		if [[ "$cachedSeriesId" != "null" ]]; then
+			echo "$cachedSeriesId"
+			exit
+		fi
+	fi
+
 	echo "$seriesSearchResultsJson" | jq -r
 	echo -n "Multiple series found for '$1'..."
 
@@ -29,6 +47,7 @@ else
 		read selectedSeriesId
 		seriesSelected=$(echo "$seriesSearchResultsJson" | jq "any(.seriesId == $selectedSeriesId)")
 	done
-
-	echo "$seriesSearchResultsJson" | jq -c ".[] | select(.seriesId == $selectedSeriesId) | { seriesSearchTerm: \"$1\", seriesId: $selectedSeriesId }" > "$outputStream"
+	seriesNameToSeriesIdJson=$(echo "$seriesSearchResultsJson" | jq -c ".[] | select(.seriesId == $selectedSeriesId) | { seriesSearchTerm: \"$1\", seriesId: $selectedSeriesId }")
+	echo "$seriesNameToSeriesIdJson" >> $CACHED_SERIES_NAME_TO_ID_FILE
+	echo "$seriesNameToSeriesIdJson" > "$outputStream"
 fi
