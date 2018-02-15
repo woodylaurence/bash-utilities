@@ -48,6 +48,14 @@ else
 		seriesSelected=$(echo "$seriesSearchResultsJson" | jq "any(.seriesId == $selectedSeriesId)")
 	done
 	seriesNameToSeriesIdJson=$(echo "$seriesSearchResultsJson" | jq -c ".[] | select(.seriesId == $selectedSeriesId) | { seriesSearchTerm: \"$1\", seriesId: $selectedSeriesId }")
-	echo "$seriesNameToSeriesIdJson" >> $CACHED_SERIES_NAME_TO_ID_FILE
+
+	if [[ ! -s "$CACHED_SERIES_NAME_TO_ID_FILE" ]]; then
+		echo "[$seriesNameToSeriesIdJson]" > "$CACHED_SERIES_NAME_TO_ID_FILE"
+	else
+		jqAddSeriesNameToSerisIdJsonToArrayQuery=". += [$seriesNameToSeriesIdJson]"
+		cachedSeriesNameToIdList=$(cat "$CACHED_SERIES_NAME_TO_ID_FILE" | jq -r "$jqAddSeriesNameToSerisIdJsonToArrayQuery")
+		echo "$cachedSeriesNameToIdList" > "$CACHED_SERIES_NAME_TO_ID_FILE"
+	fi
+
 	echo "$seriesNameToSeriesIdJson" > "$outputStream"
 fi
