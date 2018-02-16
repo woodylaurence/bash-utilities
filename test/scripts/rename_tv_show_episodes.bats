@@ -50,6 +50,10 @@ teardown() {
 
 @test "4 - rename_tv_show_episodes UNIT : no media files in directory" {
 	touch "fake-file.txt"
+	touch "TheHobbitAnUnexpectedJourney.mkv"
+	touch "TheHobbitTheDesolationOfSmaug.m4v"
+	touch "TheHobbitTheBattleOfTheFiveArmies.mp4"
+	touch "HarryPotterAndThePrisonerOfAzkaban.avi"
 
 	run "$SCRIPTS_SRC_DIR"/rename_tv_show_episodes.sh
 	assert_failure

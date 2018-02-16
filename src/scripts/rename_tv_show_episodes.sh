@@ -23,7 +23,16 @@ fi
 shopt -s nullglob
 allMediaFiles=(*.{mkv,m4v,mp4,avi})
 
-if [[ ${#allMediaFiles[@]} -eq 0 ]]; then
+tvShowMediaFiles=()
+for mediaFile in "${allMediaFiles[@]}"
+do
+	tvShowEpisodeRegex=".*S[0-9]+E[0-9]+.*"
+	if [[ "$mediaFile" =~ $tvShowEpisodeRegex ]]; then
+		tvShowMediaFiles+=("$mediaFile")
+	fi
+done
+
+if [[ ${#tvShowMediaFiles[@]} -eq 0 ]]; then
 	echo "ERROR: No media files found in current directory."
 	exit 1
 fi
@@ -34,14 +43,14 @@ mkdir "$UNMATCHED_MEDIA_DIR"
 mkdir "$RENAMED_MEDIA_DIR"
 
 #### Copy (link to save time) these files to a staging area and rename to standard format
-for file in "${allMediaFiles[@]}"
+for file in "${tvShowMediaFiles[@]}"
 do
 	mv "$file" "$ORIGINAL_MEDIA_DIR/$file"
 done
 
 #### Extract series information for TV Shows
 mediaFilesTvInfoJson="[]"
-for file in "${allMediaFiles[@]}"
+for file in "${tvShowMediaFiles[@]}"
 do
 	tvInfoJson=$(get-tv-info-from-filename "$file")
 	jqAppendToArrayQuery=". += [$tvInfoJson]"
