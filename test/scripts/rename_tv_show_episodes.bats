@@ -9,12 +9,17 @@ UTILITIES_SRC_DIR="../../../src/utilities"
 MEDIA_TEST_DIRECTORY="media-test-directory"
 
 ORIGINAL_PATH_VARIABLE=$PATH
+CACHED_SERIES_NAME_TO_ID_FILE="/tmp/usr/tvdb-cache/.series-name-id-cache"
 
 setup() {
 	PATH=$(echo "$PATH" | sed -r "s|/usr/local/bin|$UTILITIES_SRC_DIR|")
 
 	mkdir $MEDIA_TEST_DIRECTORY
 	pushd "$MEDIA_TEST_DIRECTORY" > /dev/null
+
+	if [[ -e "$CACHED_SERIES_NAME_TO_ID_FILE" ]]; then
+		mv "$CACHED_SERIES_NAME_TO_ID_FILE" "${CACHED_SERIES_NAME_TO_ID_FILE}.moved"
+	fi
 }
 
 teardown() {
@@ -22,6 +27,10 @@ teardown() {
 
 	popd > /dev/null
 	rm -rf "$MEDIA_TEST_DIRECTORY"
+
+	if [[ -e "${CACHED_SERIES_NAME_TO_ID_FILE}.moved" ]]; then
+		mv "${CACHED_SERIES_NAME_TO_ID_FILE}.moved" "$CACHED_SERIES_NAME_TO_ID_FILE"
+	fi
 }
 
 @test "1 - rename_tv_show_episodes UNIT : original-media folder exists should error" {
@@ -273,4 +282,23 @@ Unable to rename the following files:
 	assert [ ! -e "$fakeFileName1" ]
 	assert [ ! -e "$fakeFileName2" ]
 	assert [ ! -e "$fakeFileName3" ]
+}
+
+@test "12 - rename_tv_show_episodes INT : where multiple results for series name but cached series-name to id file exists and contains series name" {
+	fakeFileName="Psych_S04E15.mkv"
+	touch "$fakeFileName"
+
+	echo "[{\"seriesSearchTerm\":\"psych\",\"seriesId\":71470}]" > $CACHED_SERIES_NAME_TO_ID_FILE
+
+	run "$SCRIPTS_SRC_DIR"/rename_tv_show_episodes.sh
+	assert_success
+	assert_output "
+
+Renamed the following files:
+ - Psych_S04E15.mkv --> 15 First Contact.mkv (Psych/Season 4)
+--------------------------------------------"
+
+	assert [ -e "original-media/$fakeFileName" ]
+	assert [ -e "renamed-media/Psych/Season 4/15 First Contact.mkv" ]
+	assert [ ! -e "$fakeFileName" ]
 }
