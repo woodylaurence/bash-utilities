@@ -32,7 +32,7 @@ else
 
 		cachedSeriesId=$(cat "$CACHED_SERIES_NAME_TO_ID_FILE" | jq -c "$jqSelectCachedSeriesIdQuery")
 		if [[ "$cachedSeriesId" != "null" ]]; then
-			echo "$cachedSeriesId"
+			echo "$cachedSeriesId" > "$outputStream"
 			exit
 		fi
 	fi
