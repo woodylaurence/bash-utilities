@@ -98,7 +98,7 @@ do
 		s )
 			case "$OPTARG" in
 				force-burn)
-					subtitleSettings="-s scan --subtitle-forced --subtitle-burned" ;;
+					subtitleSettings="-s scan --subtitle-forced --subtitle-burned";;
 
 				force)
 					subtitleSettings="-s scan --subtitle-forced --subtitle-default" ;;
@@ -190,6 +190,8 @@ do
 
 	filenameWithoutExtension="${file%.*}"
 
+	#echo "HandBrakeCLI -i $file -o $outputDir/$filenameWithoutExtension.$extension -f $container -m -e $encoder --${encoder}-preset $speed -q $rfRating --vfr $audioSettings $subtitleSettings --auto-anamorphic"
+
 	HandBrakeCLI -i "$file" \
 				 -o "$outputDir/$filenameWithoutExtension.$extension" \
 				 -f "$container" \
@@ -199,7 +201,7 @@ do
 				 -q "$rfRating" \
 					--vfr \
 				 "$audioSettings" \
-				 "$subtitleSettings" \
+				 $subtitleSettings \
 				 --auto-anamorphic 2>> "$outputFile"
 
 	echo -e "\nCompleted $file\n\n------------------------------------\n"
