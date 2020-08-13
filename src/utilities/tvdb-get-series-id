@@ -11,8 +11,7 @@ fi
 outputStream="${2:-/dev/stdout}"
 
 #Search series by name
-urlSafeSeriesName=$(urlencode $1)
-seriesSearchResultsJson=$(tvdb-search-series "$urlSafeSeriesName")
+seriesSearchResultsJson=$(tvdb-search-series "$1")
 
 #Get Series Id from results, if multiple, request which result user wants
 numSeriesFound=$(echo "$seriesSearchResultsJson" | jq "length")
