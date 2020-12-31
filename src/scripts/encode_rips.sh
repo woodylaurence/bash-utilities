@@ -200,7 +200,7 @@ do
 				 	--${encoder}-preset "$speed" \
 				 -q "$rfRating" \
 					--vfr \
-				 "$audioSettings" \
+				 $audioSettings \
 				 $subtitleSettings \
 				 --auto-anamorphic 2>> "$outputFile"
 
