@@ -1,0 +1,58 @@
+#!/bin/bash
+
+CACHED_SERIES_NAME_TO_ID_FILE="/tmp/usr/tvdb-cache/.series-name-id-cache"
+
+if [[ -z $1 ]]; then
+  echo "ERROR: No series search term provided."
+  exit 1
+fi
+
+#Output stream for end json reuslt is /dev/stdout if not supplied in $2
+output_stream="${2:-/dev/stdout}"
+
+#Search series by name
+series_search_results_json=$(tvdb-search-series "$1")
+
+#Get Series Id from results, if multiple, request which result user wants
+num_series_found=$(echo "$series_search_results_json" | jq "length")
+if [[ "$num_series_found" -eq "0" ]]; then
+  echo "null" >"$output_stream"
+elif [[ "$num_series_found" -eq "1" ]]; then
+  echo "$series_search_results_json" | jq -cr --arg search_term "$1" '.[0] | { seriesSearchTerm: $search_term, seriesId: .seriesId, seriesReleaseYear: .seriesReleaseYear }' >"$output_stream"
+else
+  if [[ -e "$CACHED_SERIES_NAME_TO_ID_FILE" ]]; then
+    jq_select_cached_series_id_query="if any(.seriesSearchTerm == \"$1\") then .[] | select(.seriesSearchTerm == \"$1\") else null end"
+
+    cached_series_id=$(jq -c "$jq_select_cached_series_id_query" "$CACHED_SERIES_NAME_TO_ID_FILE")
+    if [[ "$cached_series_id" != "null" ]]; then
+      echo "$cached_series_id" >"$output_stream"
+      exit
+    fi
+  fi
+
+  echo "$series_search_results_json" | jq -r
+  echo -n "Multiple series found for '$1'..."
+
+  series_selected=false
+  while [[ $series_selected == false ]]; do
+    echo "Please select seriesId from above"
+    read -r selected_series_id
+    series_selected=$(jq -r --argjson series_id $selected_series_id 'any(.seriesId == $series_id)' <<<"$series_search_results_json")
+  done
+
+  selected_series_release_year=$(jq -r --argjson series_id $selected_series_id 'first(.[] | select(.seriesId == $series_id)) | .seriesReleaseYear' <<<"$series_search_results_json")
+  series_info_json=$(jq -c --argjson series_id $selected_series_id \
+    --arg search_term "$1" \
+    --argjson release_year $selected_series_release_year \
+    '.[] | select(.seriesId == $series_id) | { seriesSearchTerm: $search_term, seriesId: $series_id, seriesReleaseYear: $release_year }' \
+    <<<"$series_search_results_json")
+
+  if [[ ! -s "$CACHED_SERIES_NAME_TO_ID_FILE" ]]; then
+    echo "[$series_name_to_series_id_json]" >"$CACHED_SERIES_NAME_TO_ID_FILE"
+  else
+    cached_series_info_list=$(jq -r --argjson item $series_info_json '. += [$item]' "$CACHED_SERIES_NAME_TO_ID_FILE")
+    echo "$cached_series_info_list" >"$CACHED_SERIES_NAME_TO_ID_FILE"
+  fi
+
+  echo "$series_info_json" >"$output_stream"
+fi

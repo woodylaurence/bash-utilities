@@ -5,123 +5,109 @@ ORIGINAL_MEDIA_DIR="$PWD/original-media"
 UNMATCHED_MEDIA_DIR="$PWD/unmatched-media"
 RENAMED_MEDIA_DIR="$PWD/renamed-media"
 
-#Ensure the current directory doesn't already have outstanding renaming output
-if [[ -e "$ORIGINAL_MEDIA_DIR" ]]; then
-	echo "ERROR: original-media folder exists in current directory."
-	exit 1
-fi
-if [[ -e "$UNMATCHED_MEDIA_DIR" ]]; then
-	echo "ERROR: unmatched-media folder exists in current directory."
-	exit 1
-fi
-if [[ -e "$RENAMED_MEDIA_DIR" ]]; then
-	echo "ERROR: renamed-media folder exists in current directory."
-	exit 1
-fi
-
-#### Start in directory with media files; could be named in numerous ways
-shopt -s nullglob
-allMediaFiles=(*.{mkv,m4v,mp4,avi})
-
-tvShowMediaFiles=()
-for mediaFile in "${allMediaFiles[@]}"
-do
-	tvShowEpisodeRegex=".*S[0-9]+E[0-9]+.*"
-	if [[ "$mediaFile" =~ $tvShowEpisodeRegex ]]; then
-		tvShowMediaFiles+=("$mediaFile")
+#Create media directories, if required and ensure they are empty
+directories=("$ORIGINAL_MEDIA_DIR" "$UNMATCHED_MEDIA_DIR" "$RENAMED_MEDIA_DIR")
+for dir in "${directories[@]}"; do
+	mkdir -p "$dir"
+	if [[ -n $(ls -A "$dir") ]]; then
+		echo "ERROR - $dir is not empty."
+		exit 1
 	fi
 done
 
-if [[ ${#tvShowMediaFiles[@]} -eq 0 ]]; then
-	echo "ERROR: No media files found in current directory."
+#### Start in directory with media files; could be named in numerous ways
+shopt -s nullglob
+tv_show_media_files=()
+for media_file in *.{mkv,m4v,mp4}; do
+	[[ $media_file =~ S[0-9]+E[0-9]+ ]] && tv_show_media_files+=("$media_file")
+done
+
+if [[ ${#tv_show_media_files[@]} -eq 0 ]]; then
+	echo "ERROR - No media files found in current directory."
 	exit 1
 fi
 
-#Make Directories
-mkdir "$ORIGINAL_MEDIA_DIR"
-mkdir "$UNMATCHED_MEDIA_DIR"
-mkdir "$RENAMED_MEDIA_DIR"
-
-#### Copy (link to save time) these files to a staging area and rename to standard format
-for file in "${tvShowMediaFiles[@]}"
+#### Move these files to a staging area
+for file in "${tv_show_media_files[@]}"
 do
 	mv "$file" "$ORIGINAL_MEDIA_DIR/$file"
 done
 
 #### Extract series information for TV Shows
-mediaFilesTvInfoJson="[]"
-for file in "${tvShowMediaFiles[@]}"
-do
-	tvInfoJson=$(get-tv-info-from-filename "$file")
-	jqAppendToArrayQuery=". += [$tvInfoJson]"
-	mediaFilesTvInfoJson=$(echo "$mediaFilesTvInfoJson" | jq "$jqAppendToArrayQuery")
+media_files_tv_info_json="[]"
+for file in "${tv_show_media_files[@]}"; do
+	tv_info_json=$(get-tv-info-from-filename "$file")
+	media_files_tv_info_json=$(jq --argjson item "$tv_info_json" '. += [$item]' <<< "$media_files_tv_info_json")
 done
 
 #Convert list of series into unique list of search terms
-jqSeriesNameQuery="map(.formattedSeriesName | ascii_downcase) \
-						| unique \
-						| .[]
-						| @base64"
-tvSeriesToSearchFor=$(echo "$mediaFilesTvInfoJson" | jq -r "$jqSeriesNameQuery")
+tv_series_to_search_for=$(echo "$media_files_tv_info_json" | jq -r "map(.formattedSeriesName | ascii_downcase) | unique | .[] | @base64")
 
-#Loop through series earch terms, get seriesId from TVDB and then update mediaFilesTvInfoJson to include seriesId
-for encodedSeries in $tvSeriesToSearchFor
+#Loop through series search terms, get seriesId from TVDB and then update media_files_tv_info_json to include seriesId
+for encoded_series in $tv_series_to_search_for
 do
-	series=$(echo "$encodedSeries" | base64 --decode)
+	series=$(base64 --decode <<< "$encoded_series")
 
-	tmpSeriesJsonFile=".tmp-series-json"
-	tvdb-get-series-id "$series" "$tmpSeriesJsonFile"
-	getSeriesIdResultAsJson=$(cat "$tmpSeriesJsonFile")
-	rm "$tmpSeriesJsonFile"
+	#Think we're using a temporary file here because tvdb-get-series-id could output a list to choose from and we want to only capture the final output of the command?
+	tmp_series_json_file=".tmp-series-json"
+	tvdb-get-series-info "$series" "$tmp_series_json_file"
+	IFS=$'\t' read -r series_id release_year < <(jq -r '[.seriesId, .seriesReleaseYear] | @tsv' "$tmp_series_json_file")
+	rm "$tmp_series_json_file"
 
-	seriesId=$(echo "$getSeriesIdResultAsJson" | jq -r ".seriesId")
-	jqUpdateSeriesIdQuery="map((select(.seriesSearchTerm == \"$series\") | .seriesId) |= $seriesId)"
-	mediaFilesTvInfoJson=$(echo "$mediaFilesTvInfoJson" | jq -r "$jqUpdateSeriesIdQuery")
+	media_files_tv_info_json=$(jq --arg series "$series" \
+	       			      --argjson id $series_id \
+				      --argjson release_year $release_year \
+				      'map(if .seriesSearchTerm == $series then .seriesId = $id | .seriesReleaseYear = $release_year else . end)' \
+				   <<< "$media_files_tv_info_json")
 done
 
-previousSeries=""
+previous_series=""
 echo "Unable to rename the following files:" > .unmatched-media-output
 echo -n "Renamed the following files:" > .renamed-media-output
 
 #### Use above information to rename files in staging area.
-jqSortBySeriesNameThenSeasonThenEpisodeQuery=". | sort_by((.formattedSeriesName | ascii_downcase), .seasonNumber, .episodeNumber)"
-for encodedEpisodeInfo in $(echo "$mediaFilesTvInfoJson" | jq -r "$jqSortBySeriesNameThenSeasonThenEpisodeQuery | .[] | @base64")
+base64_encoded_ordered_episode_infos=$(jq  -r '. | sort_by((.formattedSeriesName | ascii_downcase), .seasonNumber, .episodeNumber) | .[] | @base64' <<< "$media_files_tv_info_json")
+for encoded_episode_info in $base64_encoded_ordered_episode_infos
 do
-	episodeInfo=$(echo $encodedEpisodeInfo | base64 --decode)
-	seriesId=$(echo "$episodeInfo" | jq -r ".seriesId")
-	originalFilename=$(echo "$episodeInfo" | jq -r ".filename")
-	seriesSearchTerm=$(echo "$episodeInfo" | jq ".seriesSearchTerm" | sed 's/"//g')
+	episode_info=$(echo $encoded_episode_info | base64 --decode)
+	IFS=$'\t' read -r \
+		original_filename \
+		series_id \
+	       	series_name \
+	       	series_search_term \
+	       	release_year \
+	       	season_number \
+	       	formatted_season_number \
+	       	episode_number \
+		formatted_episode_number \
+		extension < <(jq -r '[.filename, .seriesId, .formattedSeriesName, .seriesSearchTerm, .seriesReleaseYear,
+			  	      .seasonNumber, .formattedSeasonNum, .episodeNumber, .formattedEpisodeNum, .extension] | @tsv' <<< "$episode_info")
 
-	if [[ "$seriesId" == "null" ]]; then
-		ln "$ORIGINAL_MEDIA_DIR/$originalFilename" "$UNMATCHED_MEDIA_DIR/$originalFilename"
-		echo " - $originalFilename (series search term - '$seriesSearchTerm')" >> .unmatched-media-output
+	if [[ "$series_id" == "null" ]]; then
+		ln "$ORIGINAL_MEDIA_DIR/$original_filename" "$UNMATCHED_MEDIA_DIR/$original_filename"
+		echo " - $original_filename (series search term - '$series_search_term')" >> .unmatched-media-output
 	else
-		seasonNumber=$(echo "$episodeInfo" | jq -r ".seasonNumber")
-		episodeNumber=$(echo "$episodeInfo" | jq -r ".episodeNumber")
+		episode_metadata=$(tvdb-get-series-episode-details $series_id $season_number $episode_number --use-cache --update-cache)
 
-		episodeMetaData=$(tvdb-get-series-episode-details $seriesId $seasonNumber $episodeNumber --use-cache --update-cache)
-
-		if [[ "$episodeMetaData" == "null" ]]; then
-			ln "$ORIGINAL_MEDIA_DIR/$originalFilename" "$UNMATCHED_MEDIA_DIR/$originalFilename"
-			echo " - $originalFilename (series search term - '$seriesSearchTerm')" >> .unmatched-media-output
+		if [[ "$episode_metadata" == "null" ]]; then
+			ln "$ORIGINAL_MEDIA_DIR/$original_filename" "$UNMATCHED_MEDIA_DIR/$original_filename"
+			echo " - $original_filename (series search term - '$series_search_term')" >> .unmatched-media-output
 		else
-			episodeName=$(echo "$episodeMetaData" | jq ".[0] | .name")
-			formattedEpisodeNumber=$(echo "$episodeInfo" | jq ".formattedEpisodeNum")
-			fileExtension=$(echo "$episodeInfo" | jq ".extension")
-			newFileName=$(echo "$formattedEpisodeNumber $episodeName.$fileExtension" | sed 's/"//g')
+			episode_name=$(jq -r '.[0] | .name' <<< "$episode_metadata")
+			
+			new_filename="$series_name ($release_year) S${formatted_season_number}E${formatted_episode_number} - $episode_name.$extension"
 
-			seriesName=$(echo "$episodeInfo" | jq ".formattedSeriesName" | sed 's/"//g')
-			episodeFolder="$RENAMED_MEDIA_DIR/$seriesName/Season $seasonNumber"
-			mkdir -p "$episodeFolder"
-			ln "$ORIGINAL_MEDIA_DIR/$originalFilename" "$episodeFolder/$newFileName"
+			season_folder="$RENAMED_MEDIA_DIR/$series_name ($release_year)/Season $season_number"
+			mkdir -p "$season_folder"
+			ln "$ORIGINAL_MEDIA_DIR/$original_filename" "$season_folder/$new_filename"
 
-			if [[ "$seriesSearchTerm" != "$previousSeries" ]]; then
+			if [[ "$series_search_term" != "$previous_series" ]]; then
 				echo >> .renamed-media-output
 			fi
 
-			echo " - $originalFilename --> $newFileName ($seriesName/Season $seasonNumber)" >> .renamed-media-output
+			echo " - $original_filename --> $new_filename ($series_name/Season $season_number)" >> .renamed-media-output
 
-			previousSeries="$seriesSearchTerm"
+			previous_series="$series_search_term"
 		fi
 	fi
 done
@@ -145,5 +131,3 @@ fi
 
 rm .renamed-media-output
 rm .unmatched-media-output
-
-#### Display renames to user, accept or deny

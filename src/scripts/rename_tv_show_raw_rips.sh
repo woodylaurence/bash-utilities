@@ -5,46 +5,54 @@ RENAMED_MARKER_FILE_NAME=".renamed"
 
 cd "$WORK_DIR"
 
-for seriesFolder in *
+for series_name in *
 do
 	echo
 	echo
+
+	if [[ $series_name =~ ^[a-zA-Z0-9]+$ ]]; then
+		echo "Looking at $series_name"
+	else
+		echo "Warning - can't parse series name from $series_name. Skipping..."
+		continue
+	fi
 	
-	pushd "$seriesFolder" > /dev/null
+	pushd "$series_name" > /dev/null
 
-	for seasonFolder in *
+	for season_folder in *
 	do
-		if [[ -e "$seasonFolder/$RENAMED_MARKER_FILE_NAME" ]]; then
-			echo "Already renamed file in $seriesFolder/$seasonFolder"
+		if [[ -e "$season_folder/$RENAMED_MARKER_FILE_NAME" ]]; then
+			echo "Already renamed file in $series_name/$season_folder"
 			continue
 		fi
 
-		SEASON_NUMBER_REGEX="^.*Season([0-9]+)_(DVD|BluRay)Rip$"
-		seasonNumber=$(sed -nr "s/$SEASON_NUMBER_REGEX/\1/p" <<< "$seasonFolder")
-		if [[ -z "$seasonNumber" ]]; then
-			echo "Could not parse season number for ${seriesFolder}-${seasonFolder}"
+		SEASON_NUMBER_REGEX="^Season([0-9]+)$"
+		if [[ $season_folder =~ $SEASON_NUMBER_REGEX ]]; then
+			season_number=${BASH_REMATCH[1]}
+		else
+			echo "Warning - Could not parse season number for $series_name / $season_folder"
 			continue
 		fi
 
-		seasonNumber=$(printf %02d $seasonNumber)
-		pushd "$seasonFolder" > /dev/null
+		formatted_season_number=$(printf %02d $season_number)
+		pushd "$season_folder" > /dev/null
 
 		i=1
-		for discFolder in */
+		for disc_folder in */
 		do
 			DISC_REGEX="Disc[0-9]+"
-			if [[ ! "$discFolder" =~ $DISC_REGEX ]]; then
+			if [[ ! "$disc_folder" =~ $DISC_REGEX ]]; then
 				echo "Could not find Disc folder"
 				continue
 			fi
 
-			pushd "$discFolder" > /dev/null
-			for episodeFile in *.mkv
+			pushd "$disc_folder" > /dev/null
+			for episode_file in *.mkv
 			do
-				formattedEpisodeNumber=$(printf %02d $i)
+				formatted_episode_number=$(printf %02d $i)
 
-				echo "Renaming $episodeFile --> ${seriesFolder}_S${seasonNumber}E${formattedEpisodeNumber}.mkv"
-				mv "$episodeFile" "${seriesFolder}_S${seasonNumber}E${formattedEpisodeNumber}.mkv"
+				echo "Renaming $episode_file --> ${series_name}_S${formatted_season_number}E${formatted_episode_number}.mkv"
+				mv "$episode_file" "${series_name}_S${formatted_season_number}E${formatted_episode_number}.mkv"
 				i=$((i + 1))
 			done
 
@@ -55,7 +63,7 @@ do
 		rmdir Disc*
 
 		touch $RENAMED_MARKER_FILE_NAME
-		echo "Renamed episodes in $seasonFolder"
+		echo "Renamed episodes in $season_folder"
 
 		popd > /dev/null
 	done

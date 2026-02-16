@@ -12,9 +12,9 @@ formattedSeasonNum=$(printf "%02d\n" $seasonNumber)
 episodeNumber=$(echo $1 | sed -r "s/$tvEpisodeRegex/\3/" | sed "s/^0*//")
 formattedEpisodeNum=$(printf "%02d\n" $episodeNumber)
 formattedSeriesName=$(echo "$seriesName" | sed -r "s/([A-Z])/ \1/g" \
-										 | sed -r "s/^ //g" \
-										 | sed "s/[-._]//g" \
-										 | sed -r "s/ ([ ]*)/ /g")
+					 | sed -r "s/^ //g" \
+					 | sed "s/[-._]//g" \
+					 | sed -r "s/ ([ ]*)/ /g")
 seriesSearchTerm=$(echo "$formattedSeriesName" | sed -r "s/([A-Z])/\L\1/g")
 extension="${1##*.}"
 
@@ -24,6 +24,7 @@ echo "{
 \"seriesName\":\"$seriesName\",
 \"formattedSeriesName\":\"$formattedSeriesName\",
 \"seriesSearchTerm\":\"$seriesSearchTerm\",
+\"seriesReleaseYear\":null,
 \"seasonNumber\":$seasonNumber,
 \"formattedSeasonNum\":\"$formattedSeasonNum\",
 \"episodeNumber\":$episodeNumber,
