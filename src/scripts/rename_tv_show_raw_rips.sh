@@ -1,65 +1,68 @@
 #!/bin/bash
 
-WORK_DIR="/mnt/Dump/RawRips/TV Shows"
+WORK_DIR="/mnt/dump/RawRips/TV Shows"
 RENAMED_MARKER_FILE_NAME=".renamed"
 
-cd "$WORK_DIR"
+shopt -s nullglob
 
-for series_name in *; do
-  echo
-  echo
+for series_path in "$WORK_DIR"/*; do
+  series_name=$(basename "$series_path")
 
-  if [[ $series_name =~ ^[a-zA-Z0-9]+$ ]]; then
-    echo "Looking at $series_name"
-  else
+  [[ -d "$series_path" ]] || continue
+
+  if [[ ! $series_name =~ ^[a-zA-Z0-9]+$ ]]; then
     echo "Warning - can't parse series name from $series_name. Skipping..."
     continue
   fi
 
-  pushd "$series_name" >/dev/null
+  echo "Looking at $series_name"
 
-  for season_folder in *; do
-    if [[ -e "$season_folder/$RENAMED_MARKER_FILE_NAME" ]]; then
+  for season_path in "$series_path"/*; do
+    season_folder=$(basename "$season_path")
+
+    [[ -d "$season_path" ]] || continue
+
+    if [[ -e "$season_path/$RENAMED_MARKER_FILE_NAME" ]]; then
       echo "Already renamed file in $series_name/$season_folder"
       continue
     fi
 
-    SEASON_NUMBER_REGEX="^Season([0-9]+)$"
-    if [[ $season_folder =~ $SEASON_NUMBER_REGEX ]]; then
+    if [[ $season_folder =~ ^Season([0-9]+)$ ]]; then
       season_number=${BASH_REMATCH[1]}
     else
       echo "Warning - Could not parse season number for $series_name / $season_folder"
       continue
     fi
 
-    formatted_season_number=$(printf %02d $season_number)
-    pushd "$season_folder" >/dev/null
+    formatted_season_number=$(printf %02d "$season_number")
 
-    mkdir -p MakeMKVOutput
-
-    shopt -s nullglob
+    mkdir -p "$season_path/MakeMKVOutput"
 
     i=1
-    for disc_folder in Disc[0-9]*/; do
-      pushd "$disc_folder" >/dev/null
-      for episode_file in *.mkv; do
-        formatted_episode_number=$(printf %02d $i)
 
-        echo "Linking ${disc_folder}${episode_file} --> ${series_name}_S${formatted_season_number}E${formatted_episode_number}.mkv"
-        ln "$episode_file" "../${series_name}_S${formatted_season_number}E${formatted_episode_number}.mkv"
-        i=$((i + 1))
+    for disc_path in "$season_path"/Disc[0-9]*/; do
+      disc_folder=$(basename "$disc_path")
+
+      for episode_file in "$disc_path"/*.mkv; do
+        episode_base=$(basename "$episode_file")
+        formatted_episode_number=$(printf %02d "$i")
+
+        target="$season_path/${series_name}_S${formatted_season_number}E${formatted_episode_number}.mkv"
+
+        echo "Linking $season_folder/$disc_folder/$episode_base --> $(basename "$target")"
+
+        ln "$episode_file" "$target"
+
+        ((i++))
       done
 
-      popd >/dev/null
-
-      mv "$disc_folder" MakeMKVOutput/
+      mv "$disc_path" "$season_path/MakeMKVOutput/"
     done
 
-    touch $RENAMED_MARKER_FILE_NAME
+    touch "$season_path/$RENAMED_MARKER_FILE_NAME"
     echo "Renamed episodes in $season_folder"
-
-    popd >/dev/null
   done
 
-  popd >/dev/null
+  echo
+  echo
 done
