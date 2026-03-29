@@ -34,7 +34,7 @@ parse_args() {
       shift
       ;;
     --grainy)
-      grainy=true
+      is_grainy=true
       shift
       ;;
     -q | --quality)
@@ -73,6 +73,7 @@ Options:
 Scenario Flags:
   --dark-scenes             Optimizes for dark content (uses aq-mode 3 to prevent banding)
   --cartoon                 Optimizes for animation (keeps SAO enabled for flat surfaces)
+  --is_grainy                  Preserves film grain for older movies (sets psy-rd=1.5, aq-mode=2)
   --dvd                     Adjusts settings for DVD sources (anamorphic, lower audio bitrate)
 
 Other:
@@ -110,7 +111,7 @@ get_crf_rating() {
 
 get_extra_encopts_arguments() {
   extra_encopts=$(if [[ -v cartoon || $crf_rating -ge 24 ]]; then echo ""; else echo "no-sao:"; fi)
-  if [[ -v grainy ]]; then
+  if [[ -v is_grainy ]]; then
     extra_encopts+="psy-rd=1.5:psy-rdoq=2.0"
   elif [[ -v cartoon ]]; then
     extra_encopts+="psy-rd=0.5:psy-rdoq=0.5"
