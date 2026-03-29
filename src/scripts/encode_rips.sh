@@ -1,217 +1,171 @@
 #!/bin/bash
 
-#Constants
-DEFAULT_OUTPUT_DIR="/mnt/Dump/HandbrakeCLI_Output"
+set -euo pipefail
+IFS=$'\n\t'
+DEFAULT_OUTPUT_DIR="/mnt/dump_extra/HandbrakeOutput"
 
-#Error Codes:
-ILLEGAL_OPTION=1
-ILLEGAL_PRESET=2
-ILLEGAL_ENCODER=3
-ILLEGAL_SUBTITLE=4
-ILLEGAL_WAIT=5
-ILLEGAL_WORKING_DIR=6
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -i | --input-dir)
+      input_dir="$2"
+      shift 2
+      ;;
+    -o | --output-dir)
+      output_dir="$2"
+      shift 2
+      ;;
+    -h | --help)
+      show_help
+      exit 0
+      ;;
+    --dvd)
+      is_dvd_source=true
+      shift
+      echo "Haven't dealt with DVD sources yet" >&2
+      exit 1
+      ;;
+    --dark-scenes)
+      dark_scenes=true
+      shift
+      ;;
+    --cartoon)
+      cartoon=true
+      shift
+      ;;
+    --grainy)
+      grainy=true
+      shift
+      ;;
+    -q | --quality)
+      quality="$2"
+      shift 2
+      ;;
+    --crf)
+      custom_crf="$2"
+      shift 2
+      ;;
+    -w | --wait)
+      wait_time="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      exit 1
+      ;;
+    esac
+  done
+}
 
-#Read and assign script arguments
-while getopts ":p:e:s:i:o:w:" opt
-do
-	case $opt in
-		p )
-			case "$OPTARG" in
-				br-high)
-					rfRating=18
-					speed=medium
-					encoder=x264
-					container=mkv
-					extension=mkv
-					audioSettings="-a 1,1 -E faac,ac3 -B 320,640 -R auto,auto -6 dpl2,6ch" ;;
+show_help() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
 
-				br-std)
-					rfRating=20
-					speed=fast
-					encoder=x264
-					container=mkv
-					extension=mkv
-					audioSettings="-a 1,1 -E faac,ac3 -B 320,576 -R auto,auto -6 dpl2,6ch" ;;
+A wrapper for HandbrakeCLI to batch encode video files with x265.
 
-				br-fast)
-					rfRating=20
-					speed=veryfast
-					container=mkv
-					extension=mkv
-					audioSettings="-a 1,1 -E faac,ac3 -B 320,576 -R auto,auto -6 dpl2,6ch" ;;
+Options:
+  -i, --input-dir DIR       Directory containing source files (default: current directory)
+  -o, --output-dir DIR      Directory for encoded files (default: $DEFAULT_OUTPUT_DIR)
+  -q, --quality LEVEL       Quality preset: low, medium (default), high, extra-high
+  --crf VALUE               Manually set a CRF value (overrides --quality)
+  -w, --wait SECONDS        Time to sleep between encodes (default: 0)
 
-				br-hevc)
-					rfRating=20
-					speed=medium
-					encoder=x265
-					container=mkv
-					extension=mkv
-					audioSettings="-a 1,1 -E faac,ac3 -B 320,576 -R auto,auto -6 dpl2,6ch" ;;
+Scenario Flags:
+  --dark-scenes             Optimizes for dark content (uses aq-mode 3 to prevent banding)
+  --cartoon                 Optimizes for animation (keeps SAO enabled for flat surfaces)
+  --dvd                     Adjusts settings for DVD sources (anamorphic, lower audio bitrate)
 
-				dvd-high)
-					rfRating=19
-					speed=medium
-					container=mp4
-					extension=m4v
-					audioSettings="-a 1 -E faac -B 320 -R auto -6 dpl2" ;;
+Other:
+  -h, --help                Show this help message and exit
 
-				dvd-std)
-					rfRating=20
-					speed=fast
-					container=mp4
-					extension=m4v
-					audioSettings="-a 1 -E faac -B 256 -R auto -6 dpl2" ;;
+Examples:
+  $(basename "$0") -i ./rips -o ./encoded --quality high
+  $(basename "$0") --dark-scenes --crf 18 -w 60
+EOF
+}
 
-				dvd-fast)
-					rfRating=20
-					speed=veryfast
-					container=mp4
-					extension=m4v
-					audioSettings="-a 1 -E faac -B 256 -R auto -6 dpl2" ;;
+get_crf_rating() {
+  if [[ -v custom_crf ]]; then
+    echo "$custom_crf"
+  else
+    case "$quality" in
+      low)
+        echo 23
+        ;;
+      medium)
+        echo 21
+        ;;
+      high)
+        echo 20
+        ;;
+      extra-high)
+        echo 19
+        ;;
+      *)
+        echo 21
+        ;;
+    esac
+  fi
+}
 
-				dvd-hevc)
-					rfRating=20
-					speed=medium
-					encoder=x265
-					container=mp4
-					extension=m4v
-					audioSettings="-a 1 -E faac -B 256 -R auto -6 dpl2" ;;
+get_extra_encopts_arguments() {
+  extra_encopts=$(if [[ -v cartoon || $crf_rating -ge 24 ]]; then echo ""; else echo "no-sao:"; fi)
+  if [[ -v grainy ]]; then
+    extra_encopts+="psy-rd=1.5:psy-rdoq=2.0"
+  elif [[ -v cartoon ]]; then
+    extra_encopts+="psy-rd=0.5:psy-rdoq=0.5"
+  else
+    extra_encopts+="psy-rd=1.0:psy-rdoq=1.0"
+  fi
+}
 
-				*)
-					echo "ERROR: Illegal preset value '$OPTARG'....Exiting"
-					exit $ILLEGAL_PRESET ;;
-			esac ;;
+main() {
+  parse_args "$@"
 
-		e )
-			case "$OPTARG" in
-				x264)
-					encoder=x264 ;;
+  input_dir=${input_dir:-"$PWD"}
+  output_dir=${output_dir:-"$DEFAULT_OUTPUT_DIR"}
+  quality=${quality:-"medium"}
+  aq_mode=$(if [[ -v dark_scenes ]]; then echo 3; else echo 2; fi)
+  crf_rating=$(get_crf_rating)
+  audio_bitrate=$(if [[ -v is_dvd_source ]]; then echo 160; else echo 192; fi)
+  anamorphic_setting=$(if [[ -v is_dvd_source ]]; then echo "--auto-anamorphic"; else echo "--non-anamorphic"; fi)
+  extra_encopts_arguments=$(get_extra_encopts_arguments)
+  wait_time=${wait_time:-0}
 
-				x265)
-					encoder=x265 ;;
+  #deal with subtitles, what do we want to do here? We want to scan subtitle 1 as standard, but we need to decide what to do if there's some foreign dialogue
+  #need to be able to determine whether a source file has a separate foreign subtitle track, or it has a single substitle track with forced parts of it
+  #claude suggests that the --subtitle-forced flag would only output the subtitle track if it had forced flag on the source, could be useful
 
-				*)
-					echo "ERROR: Illegal encoder value '$OPTARG'....Exiting"
-					exit $ILLEGAL_ENCODER
-			esac ;;
+  #Ensure output directory exists
+  output_dir_absolute_path=$(realpath "$output_dir")
+  mkdir -p "$output_dir_absolute_path"
 
-		s )
-			case "$OPTARG" in
-				force-burn)
-					subtitleSettings="-s scan --subtitle-forced --subtitle-burned";;
+  log_file="$output_dir/HandbrakeOutput.log"
 
-				force)
-					subtitleSettings="-s scan --subtitle-forced --subtitle-default" ;;
+  shopt -s nullglob
+  for file in "$input_dir"/*.{mkv,m4v,mp4}; do
+    filename=$(basename "$file")
+    echo -e "\nEncoding $filename ... " 2>&1 | tee -a "$log_file"
 
-				burn)
-					subtitleSettings="-s 1 --subtitle-burned" ;;
+    HandBrakeCLI \
+      --input "$file" --output "$output_dir/${filename%.*}.mkv" \
+      --format mkv \
+      --markers \
+      --encoder x265_10bit --encoder-preset slow --quality "$crf_rating" \
+      --encopts="strong-intra-smoothing=0:rect=0:rskip=2:aq-mode=${aq_mode}${extra_encopts_arguments}" \
+      --vfr \
+      ${anamorphic_setting} \
+      --audio 1 --aencoder av_aac --ab ${audio_bitrate} --mixdown dpl2 \
+      --subtitle 1 \
+      2>>"$log_file"
 
-				std)
-					subtitleSettings="-s 1" ;;
+    echo -e "\nCompleted $filename\n\n------------------------------------\n" | tee -a "$log_file"
 
-				none)
-					subtitleSettings="" ;;
+    if [[ $wait_time -gt 0 ]]; then
+      echo "Sleeping for ${wait_time}s..."
+      sleep $wait_time
+    fi
+  done
+}
 
-				*)
-					echo "ERROR: Illegal subtitle value '$OPTARG'....Exiting"
-					exit $ILLEGAL_SUBTITLE
-				esac ;;
-		i )
-			if [[ ! -e "$OPTARG" ]]; then
-				workingDir="$OPTARG"
-			else
-				echo "ERROR: Working directory '$OPTARG' doesn't exist....Exiting"
-				exit $ILLEGAL_WORKING_DIR
-			fi ;;
-
-		o )
-			outputDir="$OPTARG" ;;
-
-		w )
-			WAIT_REGEX="^([0-9]+)x([0-9]+)$"
-			if [[ "$OPTARG" =~ $WAIT_REGEX ]]; then
-				numEpisodesBetweenSleep=$(sed -nr "s/${WAIT_REGEX}/\1/p" <<< "$OPTARG")
-				secsToSleep=$(sed -nr "s/${WAIT_REGEX}/\2/p" <<< "$OPTARG")
-				sleepingEnabled=true
-			else
-				echo "ERROR: Illegal wait option '$OPTARG'."
-				echo "Wait option follows form: $WAIT_REGEX , i.e. 3x60....Exiting"
-				exit $ILLEGAL_WAIT
-			fi ;;
-
-		* )
-			echo "ERROR: Illegal optoin '$opt'....Exiting"
-			exit $ILLEGAL_OPTION ;;
-		esac
-done
-
-#Assign variables if not already set
-: "${workingDir:=$PWD}"
-: "${outputDir:=$DEFAULT_OUTPUT_DIR}"
-: "${rfRating:=20}"
-: "${speed:=fast}"
-: "${encoder:=x264}"
-: "${container:=mp4}"
-: "${extension:=m4v}"
-: "${audioSettings:=-a 1 -E faac -B 320 -R auto -6 dpl2}"
-: "${subtitleSettings:=-s scan --subtitle-forced --subtitle-burned}"
-: "${sleepingEnabled:=false}"
-: "${numEpisodesBetweenSleep:=0}"
-: "${secsToSleep:=0}"
-
-#Create output directory if it doesn't exist
-outputDirAbsolutePath=$(readlink -m "$outputDir")
-if [[ ! -e "$outputDirAbsolutePath" ]]; then
-	mkdir "$outputDirAbsolutePath"
-fi
-
-outputFile="$outputDir/HandbrakeOutput.txt"
-
-echo "Working in $workingDir"
-echo "Outputting to $outputDir"
-echo "rfRating = $rfRating, speed = $speed, encoder = $encoder"
-echo "container = $container, extension = $extension"
-echo "audioSettings = $audioSettings"
-echo "subtitleSettings = $subtitleSettings"
-echo "Sleeping ${secsToSleep}s every $numEpisodesBetweenSleep episodes"
-echo
-echo
-
-cd "$workingDir"
-
-acceptedMediaFiles="*.mkv *.mp4 *.m4v *.avi"
-shopt -s nullglob
-totalNumFilesToEncode=$(ls -1 $acceptedMediaFiles | wc -l)
-
-filesEncoded=0
-for file in $acceptedMediaFiles
-do
-	echo -e "\nEncoding $file ... " 2>&1 | tee -a "$outputFile"
-
-	filenameWithoutExtension="${file%.*}"
-
-	#echo "HandBrakeCLI -i $file -o $outputDir/$filenameWithoutExtension.$extension -f $container -m -e $encoder --${encoder}-preset $speed -q $rfRating --vfr $audioSettings $subtitleSettings --auto-anamorphic"
-
-	HandBrakeCLI -i "$file" \
-				 -o "$outputDir/$filenameWithoutExtension.$extension" \
-				 -f "$container" \
-				 -m \
-				 -e $encoder \
-				 	--${encoder}-preset "$speed" \
-				 -q "$rfRating" \
-					--vfr \
-				 $audioSettings \
-				 $subtitleSettings \
-				 --auto-anamorphic 2>> "$outputFile"
-
-	echo -e "\nCompleted $file\n\n------------------------------------\n"
-
-	let filesEncoded++
-
-	if [[ $sleepingEnabled = true &&
-		  $filesEncoded -ne $totalNumFilesToEncode &&
-		  $(($filesEncoded % $numEpisodesBetweenSleep)) -eq 0 ]]; then
-		echo "Sleeping for ${secsToSleep}s..."
-		sleep "$secsToSleep"
-	fi
-done
+main "$@"
