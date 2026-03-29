@@ -73,15 +73,39 @@ Options:
 Scenario Flags:
   --dark-scenes             Optimizes for dark content (uses aq-mode 3 to prevent banding)
   --cartoon                 Optimizes for animation (keeps SAO enabled for flat surfaces)
-  --is_grainy                  Preserves film grain for older movies (sets psy-rd=1.5, aq-mode=2)
+  --grainy                  Preserves film grain for older movies (sets psy-rd=1.5, aq-mode=2)
   --dvd                     Adjusts settings for DVD sources (anamorphic, lower audio bitrate)
 
 Other:
   -h, --help                Show this help message and exit
 
-Examples:
-  $(basename "$0") -i ./rips -o ./encoded --quality high
-  $(basename "$0") --dark-scenes --crf 18 -w 60
+Recommended Settings by Film Type:
+
+  1. Modern Digital (Clean, sharp, no grain)
+     Examples: The Avengers, John Wick, Top Gun: Maverick, Chef's Table.
+     Command: $(basename "$0") -q high
+     (Uses default psy-rd=1.0 to keep detail without bloating file size).
+
+  2. Gritty/Vintage Film (Heavy grain, shot on 35mm)
+     Examples: Saving Private Ryan, Seven, Ghostbusters (1984), The Godfather.
+     Command: $(basename "$0") --grainy -q extra-high
+     (Higher psy-rd preserves grain; higher quality prevents grain from "smearing").
+
+  3. Sci-Fi / Space / Horror (Deep blacks, high contrast)
+     Examples: Alien, Interstellar, The Dark Knight, Sunshine.
+     Command: $(basename "$0") --dark-scenes --grainy
+     (AQ-mode 3 is vital here to stop the "void" of space from looking pixelated).
+
+  4. Animation / Anime (Flat surfaces, bold outlines)
+     Examples: Spider-Verse, Toy Story, Princess Mononoke, Archer.
+     Command: $(basename "$0") --cartoon -q medium
+     (Keeps SAO on to ensure large areas of flat color stay perfectly smooth).
+
+  5. Handheld / High Motion (Fast movement, jittery cameras)
+     Examples: The Bourne Supremacy, Cloverfield, 1917.
+     Command: $(basename "$0") -q high
+     (Avoids "low" quality as high motion eats bitrate quickly).
+
 EOF
 }
 
@@ -90,21 +114,11 @@ get_crf_rating() {
     echo "$custom_crf"
   else
     case "$quality" in
-      low)
-        echo 23
-        ;;
-      medium)
-        echo 21
-        ;;
-      high)
-        echo 20
-        ;;
-      extra-high)
-        echo 19
-        ;;
-      *)
-        echo 21
-        ;;
+      low) echo 23 ;;
+      medium) echo 21 ;;
+      high) echo 20 ;;
+      extra-high) echo 19 ;;
+      *) echo 21 ;;
     esac
   fi
 }
@@ -118,6 +132,8 @@ get_extra_encopts_arguments() {
   else
     extra_encopts+="psy-rd=1.0:psy-rdoq=1.0"
   fi
+
+  echo "$extra_encopts"
 }
 
 main() {
@@ -153,7 +169,7 @@ main() {
       --format mkv \
       --markers \
       --encoder x265_10bit --encoder-preset slow --quality "$crf_rating" \
-      --encopts="strong-intra-smoothing=0:rect=0:rskip=2:aq-mode=${aq_mode}${extra_encopts_arguments}" \
+      --encopts="strong-intra-smoothing=0:rect=0:rskip=2:aq-mode=${aq_mode}:${extra_encopts_arguments}" \
       --vfr \
       ${anamorphic_setting} \
       --audio 1 --aencoder av_aac --ab ${audio_bitrate} --mixdown dpl2 \
