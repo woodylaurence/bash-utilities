@@ -49,6 +49,10 @@ parse_args() {
       wait_time="$2"
       shift 2
       ;;
+    -v  | --verbose)
+      verbose_mode=true
+      shift
+      ;;
     *)
       echo "Unknown option: $1" >&2
       exit 1
@@ -78,6 +82,7 @@ Scenario Flags:
 
 Other:
   -h, --help                Show this help message and exit
+  -v, --verbose             Print debug statements
 
 Recommended Settings by Film Type:
 
@@ -136,6 +141,15 @@ get_extra_encopts_arguments() {
   echo "$extra_encopts"
 }
 
+run_and_log() {
+  if $verbose_mode; then
+    printf '[DEBUG]'
+    printf ' %q' "$@"
+    echo
+  fi
+  "$@"
+}
+
 main() {
   parse_args "$@"
 
@@ -164,7 +178,7 @@ main() {
     filename=$(basename "$file")
     echo -e "\nEncoding $filename ... " 2>&1 | tee -a "$log_file"
 
-    HandBrakeCLI \
+    run_and_log HandBrakeCLI \
       --input "$file" --output "$output_dir/${filename%.*}.mkv" \
       --format mkv \
       --markers \
