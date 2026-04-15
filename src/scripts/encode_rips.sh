@@ -120,10 +120,10 @@ get_crf_rating() {
   else
     case "$quality" in
       low) echo 23 ;;
-      medium) echo 21 ;;
+      medium) echo 22 ;;
       high) echo 20 ;;
       extra-high) echo 19 ;;
-      *) echo 21 ;;
+      *) echo 22 ;;
     esac
   fi
 }
@@ -150,6 +150,18 @@ run_and_log() {
   "$@"
 }
 
+get_subtitle_tracks() {
+  forced_subtitle_stream_index=$(ffprobe -v quiet -select_streams s -show_entries stream=index:stream_disposition=forced -of csv "$1" | awk -F',' '$3 == 1 {print $2}')
+
+  if [[ -z "$forced_subtitle_stream_index" ]]; then
+    echo "1"
+  else
+    first_sub_stream_index_offset=$(( $(ffprobe -v quiet -select_streams s:0 -show_entries stream=index -of csv "$1" | grep -m1 "stream" | cut -d',' -f2) - 1 ))
+    forced_subtitle_stream=$(( $forced_subtitle_stream_index - $first_sub_stream_index_offset))
+    echo "1,$forced_subtitle_stream"
+  fi
+}
+
 main() {
   parse_args "$@"
 
@@ -163,10 +175,6 @@ main() {
   extra_encopts_arguments=$(get_extra_encopts_arguments)
   wait_time=${wait_time:-0}
 
-  #deal with subtitles, what do we want to do here? We want to scan subtitle 1 as standard, but we need to decide what to do if there's some foreign dialogue
-  #need to be able to determine whether a source file has a separate foreign subtitle track, or it has a single substitle track with forced parts of it
-  #claude suggests that the --subtitle-forced flag would only output the subtitle track if it had forced flag on the source, could be useful
-
   #Ensure output directory exists
   output_dir_absolute_path=$(realpath "$output_dir")
   mkdir -p "$output_dir_absolute_path"
@@ -175,6 +183,8 @@ main() {
 
   shopt -s nullglob
   for file in "$input_dir"/*.{mkv,m4v,mp4}; do
+    subtitle_tracks=$(get_subtitle_tracks "$file")
+
     filename=$(basename "$file")
     echo -e "\nEncoding $filename ... " 2>&1 | tee -a "$log_file"
 
@@ -187,7 +197,7 @@ main() {
       --vfr \
       ${anamorphic_setting} \
       --audio 1 --aencoder av_aac --ab ${audio_bitrate} --mixdown dpl2 \
-      --subtitle 1 \
+      --subtitle "$subtitle_tracks" \
       2>>"$log_file"
 
     echo -e "\nCompleted $filename\n\n------------------------------------\n" | tee -a "$log_file"

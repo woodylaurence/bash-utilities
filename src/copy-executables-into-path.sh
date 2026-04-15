@@ -10,33 +10,25 @@ do
 done
 shift $((OPTIND-1))
 
+copy_with_interactive_check() {
+	if $interactiveCopy; then
+		sudo cp -i "$@"
+	else
+		sudo cp "$@"
+	fi
+}
+
 if [[ -n "$1" ]]; then
 	echo "Copying $1 into path directory..."
-	if $interactiveCopy ;then
-		sudo cp -i "$1" /usr/local/bin
-	else
-		sudo cp "$1" /usr/local/bin
-	fi
+	copy_with_interactive_check "$1" /usr/local/bin
 	echo "Done"
 else
 	echo "Copying utility files into path directory..."
-	pushd utilities > /dev/null
-	if $interactiveCopy ;then
-		sudo cp -i * /usr/local/bin
-	else
-		sudo cp * /usr/local/bin
-	fi
-	popd > /dev/null
-	echo "Done"
+	copy_with_interactive_check utilities/* /usr/local/bin
+	echo Done
 
-	echo
 	echo "Copying script files into path directory..."
-	pushd scripts > /dev/null
-	if $interactiveCopy ;then
-		sudo cp -i * /usr/local/bin
-	else
-		sudo cp * /usr/local/bin
-	fi
-	popd > /dev/null
+	copy_with_interactive_check scripts/*.sh /usr/local/bin
+	copy_with_interactive_check scripts/encode_rips_completions.bash /etc/bash_completion.d/encode_rips
 	echo "Done"
 fi
