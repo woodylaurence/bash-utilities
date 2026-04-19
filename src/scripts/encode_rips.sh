@@ -186,10 +186,11 @@ main() {
     subtitle_tracks=$(get_subtitle_tracks "$file")
 
     filename=$(basename "$file")
+    output_filename="$output_dir/${filename%.*}.mkv"
     echo -e "\nEncoding $filename ... " 2>&1 | tee -a "$log_file"
 
     run_and_log HandBrakeCLI \
-      --input "$file" --output "$output_dir/${filename%.*}.mkv" \
+      --input "$file" --output "$output_filename" \
       --format mkv \
       --markers \
       --encoder x265_10bit --encoder-preset slow --quality "$crf_rating" \
@@ -199,6 +200,10 @@ main() {
       --audio 1 --aencoder av_aac --ab ${audio_bitrate} --mixdown dpl2 \
       --subtitle "$subtitle_tracks" \
       2>>"$log_file"
+
+    if [[ "$subtitle_tracks" =~ ,([0-9])$ ]]; then
+      mkvpropedit "$output_filename" --edit track:s${BASH_REMATCH[1]} --set name="Foreign Dialogue Only" --set flag-forced=1 > /dev/null || echo "Failed to set forced subtitle tack on output file."
+    fi
 
     echo -e "\nCompleted $filename\n\n------------------------------------\n" | tee -a "$log_file"
 
