@@ -141,15 +141,6 @@ get_extra_encopts_arguments() {
   echo "$extra_encopts"
 }
 
-run_and_log() {
-  if $verbose_mode; then
-    printf '[DEBUG]'
-    printf ' %q' "$@"
-    echo
-  fi
-  "$@"
-}
-
 get_subtitle_tracks() {
   forced_subtitle_stream_index=$(ffprobe -v quiet -select_streams s -show_entries stream=index:stream_disposition=forced -of csv "$1" | awk -F',' '$3 == 1 {print $2}')
 
@@ -160,6 +151,15 @@ get_subtitle_tracks() {
     forced_subtitle_stream=$(( $forced_subtitle_stream_index - $first_sub_stream_index_offset))
     echo "1,$forced_subtitle_stream"
   fi
+}
+
+run_and_log() {
+  if [[ -v verbose_mode ]]; then
+    printf '[DEBUG]'
+    printf ' %q' "$@"
+    echo
+  fi
+  "$@"
 }
 
 main() {
