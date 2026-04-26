@@ -22,11 +22,13 @@ parse_args() {
     --dvd)
       is_dvd_source=true
       shift
-      echo "Haven't dealt with DVD sources yet" >&2
-      exit 1
       ;;
     --dark-scenes)
       dark_scenes=true
+      shift
+      ;;
+    --black-and-white)
+      is_black_and_white=true
       shift
       ;;
     --cartoon)
@@ -76,6 +78,7 @@ Options:
 
 Scenario Flags:
   --dark-scenes             Optimizes for dark content (uses aq-mode 3 to prevent banding)
+  --black-and-white         Optimised for black and white content (uses aq-mode 3 to prevent banding, and raises QP offset for chroma)
   --cartoon                 Optimizes for animation (keeps SAO enabled for flat surfaces)
   --grainy                  Preserves film grain for older movies (sets psy-rd=1.5, aq-mode=2)
   --dvd                     Adjusts settings for DVD sources (anamorphic, lower audio bitrate)
@@ -118,24 +121,49 @@ get_crf_rating() {
   if [[ -v custom_crf ]]; then
     echo "$custom_crf"
   else
-    case "$quality" in
-      low) echo 23 ;;
-      medium) echo 22 ;;
-      high) echo 20 ;;
-      extra-high) echo 19 ;;
-      *) echo 22 ;;
-    esac
+    if [[ -v is_dvd_source ]]; then
+      case "$quality" in
+        low) echo 22 ;;
+        medium) echo 20 ;;
+        high) echo 18 ;;
+        extra-high) echo 17 ;;
+        *) echo 20 ;;
+      esac
+    else
+      case "$quality" in
+        low) echo 23 ;;
+        medium) echo 22 ;;
+        high) echo 20 ;;
+        extra-high) echo 19 ;;
+        *) echo 22 ;;
+      esac
+    fi
   fi
 }
 
 get_extra_encopts_arguments() {
   extra_encopts=$(if [[ -v cartoon || $crf_rating -ge 24 ]]; then echo ""; else echo "no-sao:"; fi)
-  if [[ -v is_grainy ]]; then
-    extra_encopts+="psy-rd=1.5:psy-rdoq=2.0"
-  elif [[ -v cartoon ]]; then
+
+  if [[ -v cartoon ]]; then
     extra_encopts+="psy-rd=0.5:psy-rdoq=0.5"
+
+  elif [[ -v is_grainy ]]; then
+    if [[ -v is_dvd_source ]]; then
+      extra_encopts+="psy-rd=2.0:psy-rdoq=2.5"
+    else
+      extra_encopts+="psy-rd=1.5:psy-rdoq=2.0"
+    fi
+
   else
-    extra_encopts+="psy-rd=1.0:psy-rdoq=1.0"
+    if [[ -v is_dvd_source ]]; then
+      extra_encopts+="psy-rd=1.5:psy-rdoq=2.0"
+    else
+      extra_encopts+="psy-rd=1.0:psy-rdoq=1.0"
+    fi
+  fi
+
+  if [[ -v is_black_and_white ]]; then
+    extra_encopts+="cbqoffs=3:crqoffs=3"
   fi
 
   echo "$extra_encopts"
@@ -150,6 +178,29 @@ get_subtitle_tracks() {
     first_sub_stream_index_offset=$(( $(ffprobe -v quiet -select_streams s:0 -show_entries stream=index -of csv "$1" | grep -m1 "stream" | cut -d',' -f2) - 1 ))
     forced_subtitle_stream=$(( $forced_subtitle_stream_index - $first_sub_stream_index_offset))
     echo "1,$forced_subtitle_stream"
+  fi
+}
+
+is_interlaced_dvd_source() {
+  source_file="$1"
+
+  r_rate=$(ffprobe -v quiet -select_streams v:0 -show_entries stream=r_frame_rate -of default=noprint_wrappers=1 "$source_file" | cut -d= -f2)
+  avg_rate=$(ffprobe -v quiet -select_streams v:0 -show_entries stream=avg_frame_rate -of default=noprint_wrappers=1 "$source_file" | cut -d= -f2)
+
+  if [[ "$r_rate" == "30000/1001" && "$avg_rate" == "24000/1001" ]]; then
+    return 1
+  fi
+
+  idet_output=$(ffmpeg -ss 00:02:00 -filter:v idet -frames:v 1000 -an -f rawvideo -y /dev/null -i "$source_file" 2>&1 | grep "Multi frame" | tail -n 1)
+  tff=$(echo "$idet_output" | grep -oP "TFF:\s*\K[0-9]+")
+  bff=$(echo "$idet_output" | grep -oP "BFF:\s*\K[0-9]+")
+  progressive=$(echo "$idet_output" | grep -oP "Progressive:\s*\K[0-9]+")
+  interlaced=$(( tff + bff ))
+
+  if [[ $progressive -gt $interlaced ]]; then
+    return 1
+  else
+    return 0
   fi
 }
 
@@ -168,7 +219,7 @@ main() {
   input_dir=${input_dir:-"$PWD"}
   output_dir=${output_dir:-"$DEFAULT_OUTPUT_DIR"}
   quality=${quality:-"medium"}
-  aq_mode=$(if [[ -v dark_scenes ]]; then echo 3; else echo 2; fi)
+  aq_mode=$(if [[ -v dark_scenes || -v is_black_and_white ]]; then echo 3; else echo 2; fi)
   crf_rating=$(get_crf_rating)
   audio_bitrate=$(if [[ -v is_dvd_source ]]; then echo 160; else echo 192; fi)
   anamorphic_setting=$(if [[ -v is_dvd_source ]]; then echo "--auto-anamorphic"; else echo "--non-anamorphic"; fi)
@@ -184,6 +235,7 @@ main() {
   shopt -s nullglob
   for file in "$input_dir"/*.{mkv,m4v,mp4}; do
     subtitle_tracks=$(get_subtitle_tracks "$file")
+    interlacing_setting=$(if is_interlaced_dvd_source "$file"; then echo "--deinterlace=bwdif"; else echo ""; fi )
 
     filename=$(basename "$file")
     output_filename="$output_dir/${filename%.*}.mkv"
@@ -195,6 +247,7 @@ main() {
       --markers \
       --encoder x265_10bit --encoder-preset slow --quality "$crf_rating" \
       --encopts="strong-intra-smoothing=0:rect=0:rskip=2:aq-mode=${aq_mode}:${extra_encopts_arguments}" \
+      ${interlacing_setting} \
       --vfr \
       ${anamorphic_setting} \
       --audio 1 --aencoder av_aac --ab ${audio_bitrate} --mixdown dpl2 \
