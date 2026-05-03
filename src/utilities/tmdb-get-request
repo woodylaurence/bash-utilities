@@ -1,0 +1,19 @@
+#!/bin/bash
+set -euo pipefail
+search_term="${1:-$(cat)}"
+
+if [[ -z "$TMDB_ACCESS_TOKEN" ]]; then
+  echo "ERROR: TMDB_ACCESS_TOKEN variabel not set." >&2
+  exit 1
+fi
+
+if [[ -z "$search_term" ]]; then
+	echo "ERROR: No API request URL provided." >&2
+	exit 1
+fi
+
+curl --request GET \
+     --url "https://api.themoviedb.org/3$search_term" \
+     --header "Authorization: Bearer $TMDB_ACCESS_TOKEN" \
+     --header "accept: application/json" \
+     --silent

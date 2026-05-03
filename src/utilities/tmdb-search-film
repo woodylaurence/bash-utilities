@@ -1,0 +1,12 @@
+#!/bin/bash
+set -euo pipefail
+search_term="${1:-$(cat)}"
+
+if [[ -z "$search_term" ]]; then
+  echo "ERROR: No film search term provided." >&2
+  exit 1
+fi
+
+url_safe_film_search_term=$(urlencode "$search_term")
+tmdb-get-request "/search/movie?query='$url_safe_film_search_term'" \
+  | jq -cr '[ .results[] | {id, title, release_date, overview}]'
