@@ -3,7 +3,7 @@ _encode_rips_completions() {
   current="${COMP_WORDS[COMP_CWORD]}"
   previous="${COMP_WORDS[COMP_CWORD-1]}"
 
-  local flags="--input-dir --output-dir --help --dvd --dark-scenes --cartoon --grainy --quality --crf --wait --verbose"
+  local flags="--input-dir --output-dir --help --dvd --dark-scenes --black-and-white --cartoon --grainy --quality --crf --wait --verbose"
 
   case "$previous" in
     -i|--input-dir|-o|--output-dir)

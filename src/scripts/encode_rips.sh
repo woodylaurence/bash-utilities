@@ -163,7 +163,7 @@ get_extra_encopts_arguments() {
   fi
 
   if [[ -v is_black_and_white ]]; then
-    extra_encopts+="cbqoffs=3:crqoffs=3"
+    extra_encopts+=":cbqoffs=3:crqoffs=3"
   fi
 
   echo "$extra_encopts"
@@ -218,6 +218,7 @@ main() {
 
   input_dir=${input_dir:-"$PWD"}
   output_dir=${output_dir:-"$DEFAULT_OUTPUT_DIR"}
+  encoder=$(if [[ -v is_dvd_source ]]; then echo "x265"; else echo "x265_10bit"; fi)
   quality=${quality:-"medium"}
   aq_mode=$(if [[ -v dark_scenes || -v is_black_and_white ]]; then echo 3; else echo 2; fi)
   crf_rating=$(get_crf_rating)
@@ -235,7 +236,7 @@ main() {
   shopt -s nullglob
   for file in "$input_dir"/*.{mkv,m4v,mp4}; do
     subtitle_tracks=$(get_subtitle_tracks "$file")
-    interlacing_setting=$(if is_interlaced_dvd_source "$file"; then echo "--deinterlace=bwdif"; else echo ""; fi )
+    interlacing_setting=$(if is_interlaced_dvd_source "$file"; then echo "--bwdif"; else echo ""; fi )
 
     filename=$(basename "$file")
     output_filename="$output_dir/${filename%.*}.mkv"
@@ -245,12 +246,12 @@ main() {
       --input "$file" --output "$output_filename" \
       --format mkv \
       --markers \
-      --encoder x265_10bit --encoder-preset slow --quality "$crf_rating" \
+      --encoder "$encoder" --encoder-preset slow --quality "$crf_rating" \
       --encopts="strong-intra-smoothing=0:rect=0:rskip=2:aq-mode=${aq_mode}:${extra_encopts_arguments}" \
       ${interlacing_setting} \
       --vfr \
       ${anamorphic_setting} \
-      --audio 1 --aencoder av_aac --ab ${audio_bitrate} --mixdown dpl2 \
+      --audio 1 --aencoder av_aac --ab ${audio_bitrate} --mixdown stereo --aname "Stereo" \
       --subtitle "$subtitle_tracks" \
       2>>"$log_file"
 
