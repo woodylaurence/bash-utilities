@@ -1,13 +1,10 @@
 #!/bin/bash
+set -euo pipefail
 
-if [[ -z $1 ]]; then
-  echo "ERROR: No series search term provided."
-  exit 1
-fi
+series_search_term="${1:?ERROR - No series search term provided.}"
 
 token=$(tvdb-authenticate "$TVDB_API_KEY")
+url_safe_series_name=$(urlencode "$series_search_term")
+search_result_json=$(tvdb-get-request "$token" "/search?query=$url_safe_series_name&type=series&language=eng")
 
-url_safe_series_name=$(urlencode "$1")
-search_result_json=$(tvdb-get-request $token "/search/series?name='$url_safe_series_name'")
-
-jq -cr 'if has("data") then [ .data[] | {seriesName: .seriesName, seriesId: .id, seriesReleaseYear: (.firstAired | split("-")[0])}] else null end' <<<$search_result_json
+jq -cr 'if has("data") then [ .data[] | {name: .name, id: .tvdb_id, release_year: .year, overview: .overview}] else null end' <<< "$search_result_json"
