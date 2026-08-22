@@ -1,13 +1,14 @@
 #!/bin/bash
+set -euo pipefail
 
-if [[ -z $1 ]]; then
-	echo "ERROR: No API token provided."
+api_token="${1:?ERROR - No API token provided.}"
+api_path="${2:?ERROR - No API request URL provided.}"
+
+response=$(curl --silent -X GET --header "Accept: application/json" --header "Authorization: Bearer $api_token" "https://api4.thetvdb.com/v4$api_path")
+
+if jq -e '.status != "success"' <<< "$response" > /dev/null; then
+	echo "ERROR - Got failure response from TVDB. Message: $(jq -r '.message' <<< "$response")"
 	exit 1
 fi
 
-if [[ -z $2 ]]; then
-	echo "ERROR: No API request URL provided."
-	exit 1
-fi
-
-curl --silent -X GET --header "Accept: application/json" --header "Authorization: Bearer $1" "https://api.thetvdb.com$2"
+echo "$response"

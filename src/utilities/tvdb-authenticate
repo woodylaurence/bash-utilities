@@ -1,27 +1,29 @@
 #!/bin/bash
+set -euo pipefail
 
 CACHED_TOKEN_DIRECTORY="/tmp/usr/tvdb-cache"
 CACHED_TOKEN_FILE="$CACHED_TOKEN_DIRECTORY/.tvdb-token-cache"
 
-if [[ -z $1 ]]; then
-	echo "ERROR: no API key provided."
-	exit 1
-fi
+api_key="${1:?ERROR - No API token provided.}"
 
 if [[ -e "$CACHED_TOKEN_FILE" ]]; then
-	secondsSinceTokenCacheUpdated=$(( $(date +%s) - $(date -r $CACHED_TOKEN_FILE +%s) ))
-	if [[ $secondsSinceTokenCacheUpdated -lt "84000" ]]; then
+	seconds_since_token_cache_updated=$(( $(date +%s) - $(date -r $CACHED_TOKEN_FILE +%s) ))
+	if [[ $seconds_since_token_cache_updated -lt "84000" ]]; then
 		cat "$CACHED_TOKEN_FILE"
 		exit 0
 	fi
 fi
 
-loginUrl="https://api.thetvdb.com/login"
-acceptJsonHeader="Accept: application/json"
-jsonContentHeader="Content-Type: application/json"
+response=$(curl --silent -X POST --header "accept: application/json" --header "Content-Type: application/json" -d "{ \"apikey\": \"$api_key\" }" "https://api4.thetvdb.com/v4/login")
 
-rawJson=$(curl --silent -X POST --header "$acceptJsonHeader" --header "$jsonContentHeader" -d "{ \"apikey\":\"$1\" }" "$loginUrl")
-token=$(echo "$rawJson" | jq -r ".token")
+if jq -e '.status != "success"' <<< "$response" > /dev/null; then
+	echo "ERROR - failure trying to authenticate. Message = '$(jq -r '.message' <<< "$response")'."
+	exit 1
+fi
 
-mkdir -p "$CACHED_TOKEN_DIRECTORY" && echo "$token" > "$CACHED_TOKEN_FILE"
+token=$(jq -r '.data.token' <<< "$response")
+
+mkdir -p "$CACHED_TOKEN_DIRECTORY"
+(umask 077; echo "$token" > "$CACHED_TOKEN_FILE")
+
 echo "$token"
