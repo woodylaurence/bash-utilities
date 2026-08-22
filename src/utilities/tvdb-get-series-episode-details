@@ -1,88 +1,117 @@
 #!/bin/bash
+set -euo pipefail
 
 CACHE_DIRECTORY="/tmp/usr/tvdb-cache"
-mkdir -p "$CACHE_DIRECTORY"
+MAIN_ARGS=()
+use_cache=true
 
-if [[ -z $1 ]]; then
-	echo "ERROR: No series id provided."
-	exit 1
-fi
+__parse_flags() {
+	PARSED_OPTIONS=$(getopt -n "$0"  -o s: --long "skip-cache"  -- "$@")
+	eval set -- "$PARSED_OPTIONS"
 
-# Execute getopt on the arguments passed to this program, identified by the special character $@
-PARSED_OPTIONS=$(getopt -n "$0"  -o cxu: --long "use-cache,ignore-cache,update-cache"  -- "$@")
-eval set -- "$PARSED_OPTIONS"
+	while true;	do
+		case "$1" in
+			-s|--skip-cache)
+				use_cache=false
+				shift;;
 
-# Loop through arguments to find options
-useCache=true
-updateCache=false
-while true;
-do
-	case "$1" in
-		-c|--use-cache)
-			useCache=true
-			shift;;
-
-		-x|--ignore-cache)
-			useCache=false
-			shift;;
-
-		-u|--update-cache)
-			updateCache=true
-			shift;;
-
-		--)
-			shift
-			break;;
+			--)
+				shift
+				break;;
 		esac
-done
+	done
 
-jqEpisodeDetailsQuery="."
-if [[ -n $2 ]]; then
-	if [[ -z $3 ]]; then
-		jqEpisodeDetailsQuery="map(select(.season == $2))"
+	MAIN_ARGS=("$@")
+}
+
+__get_jq_episode_details_query() {
+	local season_number="${1:-}"
+	local episode_number="${2:-}"
+
+	if [[ -n $season_number && -n $episode_number ]]; then
+		echo "map(select(.season == $season_number and .episode == $episode_number)) | select(any) // null"
+	elif [[ -n $season_number ]]; then
+		echo "map(select(.season == $season_number)) | select(any) // null"
 	else
-		jqEpisodeDetailsQuery="map(select(.season == $2 and .episode == $3))"
+		echo "select(any) // null"
 	fi
-fi
-jqEpisodeDetailsQuery="$jqEpisodeDetailsQuery | if any then . else 	null end"
+}
 
-#If using the cache, look for a file for the series
-#If the cache contains the episode we're looking for, return it
-if $useCache; then
-	if [[ -e "$CACHE_DIRECTORY/.$1" ]]; then
-		# cat "$CACHE_DIRECTORY/.$1"
-		episodeDetails=$(cat "$CACHE_DIRECTORY/.$1" | jq -c "$jqEpisodeDetailsQuery")
-		if [[ "$episodeDetails" != "null" ]]; then
-			echo "$episodeDetails" | jq -c "."
-			exit
+__get_cached_episode_details() {
+	local series_id="$1"
+	local jq_query="$2"
+
+	if [[ -e "$CACHE_DIRECTORY/.$series_id" ]]; then
+		jq -c "$jq_query" "$CACHE_DIRECTORY/.$series_id"
+	else
+		echo "null"
+	fi
+}
+
+__get_episode_details_page() {
+	local token="$1"
+	local series_id="$2"
+	local page_number="$3"
+
+	local episodes_details_json=$(tvdb-get-request $token "/series/$series_id/episodes/official?page=$page_number")
+	jq -c '.' <<< "$episodes_details_json"
+}
+
+__get_episode_details() {
+	local series_id="$1"
+
+	local token=$(tvdb-authenticate $TVDB_API_KEY)
+
+	local page_number=0
+	local episode_details=[]
+	while true; do
+		local tvdb_episode_details=$(__get_episode_details_page "$token" "$series_id" "$page_number")
+		local page_episode_details=$(jq -c '[.data.episodes[] | { season: .seasonNumber, episode: .number, name: .name}]' <<< "$tvdb_episode_details")
+		episode_details=$(jq -c ". + $page_episode_details" <<< "$episode_details")
+
+		if jq -e '.links.next == null' <<< "$tvdb_episode_details" > /dev/null; then
+			jq -c '.' <<< "$episode_details"
+			return
+		else
+			page_number=$((page_number + 1))
 		fi
+	done
+}
+
+__cache_episode_details() {
+	local series_id="$1"
+	local episode_details="$2"
+
+	echo "$episode_details" > "$CACHE_DIRECTORY"/.$series_id
+}
+
+main() {
+	__parse_flags "$@"
+	set -- "${MAIN_ARGS[@]}"
+
+	local series_id="${1:?ERROR - No series id provided.}"
+	local season_number="${2:-}"
+	local episode_number="${3:-}"
+
+	mkdir -p "$CACHE_DIRECTORY"
+
+	jq_episode_details_query=$(__get_jq_episode_details_query $season_number $episode_number)
+
+	episode_details="null"
+	if $use_cache; then
+		episode_details=$(__get_cached_episode_details "$series_id" "$jq_episode_details_query")
 	fi
-fi
 
-token=$(tvdb-authenticate $TVDB_API_KEY)
+	if [[ "$episode_details" != "null" ]]; then
+		jq -c '.' <<< "$episode_details"
+	else
+		episode_details=$(__get_episode_details "$series_id")
+		if $use_cache; then
+			__cache_episode_details "$series_id" "$episode_details"
+		fi
+		jq -c "$jq_episode_details_query" <<< "$episode_details"
+	fi
 
-#Query episode information for requested series
-episodeDetailsApiEndpoint="/series/$1/episodes"
-jqExtractEpisodeDetailsQuery="[.data[] | { season: .airedSeason, episode: .airedEpisodeNumber, name: .episodeName, airDate: .firstAired}]"
-jqNextPageQuery=".links.next"
+}
 
-#Get full series details from TVDB
-nextPage=1
-episodeDetails="[]"
-
-while [[ "$nextPage" != "null" ]]
-do
-	episodeDetailForPageResultsJson=$(tvdb-get-request $token "${episodeDetailsApiEndpoint}?page=$nextPage")
-	episodeDetailsForPage=$(echo "$episodeDetailForPageResultsJson" | jq -c "$jqExtractEpisodeDetailsQuery")
-	nextPage=$(echo "$episodeDetailForPageResultsJson" | jq -c "$jqNextPageQuery" | sed "s/\"//g")
-
-	jqAppendToArrayQuery=". += $episodeDetailsForPage"
-	episodeDetails=$(echo "$episodeDetails" | jq -c "$jqAppendToArrayQuery")
-done
-
-#If saving to the cache, dump series details into cached file
-if $updateCache; then
-	echo "$episodeDetails" > "$CACHE_DIRECTORY"/.$1
-fi
-
-echo "$episodeDetails" | jq -c "$jqEpisodeDetailsQuery"
+main "$@"
