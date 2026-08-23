@@ -29,7 +29,7 @@ __get_jq_episode_details_query() {
 	local episode_number="${2:-}"
 
 	if [[ -n $season_number && -n $episode_number ]]; then
-		echo "map(select(.season == $season_number and .episode == $episode_number)) | select(any) // null"
+		echo "first(.[] | select(.season == $season_number and .episode == $episode_number)) // null"
 	elif [[ -n $season_number ]]; then
 		echo "map(select(.season == $season_number)) | select(any) // null"
 	else
