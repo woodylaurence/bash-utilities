@@ -1,6 +1,9 @@
-[submodule "test/utilities/helpers/bats-support"]
-	path = test/utilities/helpers/bats-support
+[submodule "test/helpers/bats-support"]
+	path = test/helpers/bats-support
 	url = https://github.com/ztombol/bats-support
-[submodule "test/utilities/helpers/bats-assert"]
-	path = test/utilities/helpers/bats-assert
+[submodule "test/helpers/bats-assert"]
+	path = test/helpers/bats-assert
 	url = https://github.com/ztombol/bats-assert
+[submodule "test/helpers/mocks"]
+	path = test/helpers/mocks
+	url = https://github.com/buildkite-plugins/bats-mock
