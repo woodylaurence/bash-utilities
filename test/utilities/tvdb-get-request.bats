@@ -4,13 +4,12 @@ load ../helpers/mocks/stub
 load ../helpers/bats-support/load
 load ../helpers/bats-assert/load
 
-UTILITIES_SRC_DIR="../../src/utilities";
 CACHED_TOKEN_FILE="/tmp/usr/tvdb-cache/.tvdb-token-cache"
 
 setup() {
 	if [[ -z "$TVDB_API_KEY" ]]; then
-		echo "TVDB_API_KEY not found in environment variables..."
-		assert_failure
+		echo "TVDB_API_KEY not found in environment variables..." >&2
+		return 1
 	fi
 
 	if [[ -e "$CACHED_TOKEN_FILE" ]]; then
@@ -24,22 +23,26 @@ teardown() {
 	fi
 }
 
-@test "1 - tvdb-get-request UNIT : no api-token provided should error" {
-	run "$UTILITIES_SRC_DIR"/tvdb-get-request
+@test "1 - tvdb-get-request : no api-token provided should error" {
+	run tvdb-get-request
+
 	assert_failure
-	assert_output "ERROR: No API token provided."
+	assert_output --partial "ERROR - No API token provided."
 }
 
-@test "2 - tvdb-get-request UNIT : no request url provided should error" {
-	run "$UTILITIES_SRC_DIR"/tvdb-get-request "fake-api-token"
+@test "2 - tvdb-get-request : no request url provided should error" {
+	run tvdb-get-request "fake-api-token"
+
 	assert_failure
-	assert_output "ERROR: No API request URL provided."
+	assert_output --partial "ERROR - No API request URL provided."
 }
 
-@test "3 - tvdb-get-request INT" {
-	token=$("$UTILITIES_SRC_DIR"/tvdb-authenticate $TVDB_API_KEY)
+@test "3 - tvdb-get-request" {
+	token=$(tvdb-authenticate $TVDB_API_KEY)
 
-	run "$UTILITIES_SRC_DIR"/tvdb-get-request $token "/refresh_token"
+	run tvdb-get-request $token "/genders"
 
-	assert_output --regexp "^\{\s+\"token\":\s+\"[A-Za-z0-9_.-]{464}\"\s+\}$"
+	assert_success
+	run jq -e '.status == "success"' <<< "$output"
+	assert_success
 }

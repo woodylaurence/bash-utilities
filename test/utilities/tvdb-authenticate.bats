@@ -25,18 +25,21 @@ teardown() {
 
 @test "1 - tvdb-authenticate : no api-key provided" {
 	run tvdb-authenticate
+
 	assert_failure
 	assert_output --partial "ERROR - No API token provided."
 }
 
 @test "2 - tvdb-authenticate : providing invalid key should return no token" {
 	run tvdb-authenticate "wrong-key"
+
 	assert_failure
 	assert_output --partial "ERROR - failure trying to authenticate. Message = '"
 }
 
 @test "3 - tvdb-authenticate : no cached token, providing valid key should return valid token" {
 	run tvdb-authenticate "$TVDB_API_KEY"
+
 	assert_success
 	assert_output --regexp "^[A-Za-z0-9_.-]{300,}$"
 }
@@ -47,6 +50,7 @@ teardown() {
 	touch -d "23 hours ago" "$CACHED_TOKEN_FILE"
 
 	run tvdb-authenticate "$TVDB_API_KEY"
+
 	assert_success
 	assert_output "$cached_token_value"
 }
@@ -57,6 +61,7 @@ teardown() {
 	touch -d "24 hours ago" "$CACHED_TOKEN_FILE"
 
 	run tvdb-authenticate "$TVDB_API_KEY"
+
 	assert_success
 	refute_output "$cached_token_value"
 	assert_output --regexp "^[A-Za-z0-9_.-]{300,}$"
