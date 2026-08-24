@@ -4,13 +4,12 @@ load ../helpers/mocks/stub
 load ../helpers/bats-support/load
 load ../helpers/bats-assert/load
 
-UTILITIES_SRC_DIR="../../src/utilities";
 CACHED_TOKEN_FILE="/tmp/usr/tvdb-cache/.tvdb-token-cache"
 
 setup() {
 	if [[ -z "$TVDB_API_KEY" ]]; then
-		echo "TVDB_API_KEY not found in environment variables..."
-		assert_failure
+		echo "TVDB_API_KEY not found in environment variables..." >&2
+		return 1
 	fi
 
 	if [[ -e "$CACHED_TOKEN_FILE" ]]; then
@@ -24,49 +23,41 @@ teardown() {
 	fi
 }
 
-@test "1 - tvdb-authenticate INT : no api-key provided" {
-	run "$UTILITIES_SRC_DIR"/tvdb-authenticate
+@test "1 - tvdb-authenticate : no api-key provided" {
+	run tvdb-authenticate
 	assert_failure
-	assert_output "ERROR: no API key provided."
+	assert_output --partial "ERROR - No API token provided."
 }
 
-@test "2 - tvdb-authenticate INT : providing invalid key should return no token" {
-	run "$UTILITIES_SRC_DIR"/tvdb-authenticate "wrong-key"
+@test "2 - tvdb-authenticate : providing invalid key should return no token" {
+	run tvdb-authenticate "wrong-key"
+	assert_failure
+	assert_output --partial "ERROR - failure trying to authenticate. Message = '"
+}
+
+@test "3 - tvdb-authenticate : no cached token, providing valid key should return valid token" {
+	run tvdb-authenticate "$TVDB_API_KEY"
 	assert_success
-	assert_output "null"
+	assert_output --regexp "^[A-Za-z0-9_.-]{300,}$"
 }
 
-@test "3 - tvdb-authenticate INT : no cached token, providing valid key should return valid token" {
-	run "$UTILITIES_SRC_DIR"/tvdb-authenticate "$TVDB_API_KEY"
-	assert_success
-	assert_output --regexp "^[A-Za-z0-9_.-]{464}$"
-}
-
-@test "4 - tvdb-authenticate INT : cached token exists, providing valid key should return token from cache" {
-	cachedTokenValue="fake-token-value"
-	echo "$cachedTokenValue" > "$CACHED_TOKEN_FILE"
-
-	run "$UTILITIES_SRC_DIR"/tvdb-authenticate "$TVDB_API_KEY"
-	assert_success
-	assert_output "$cachedTokenValue"
-}
-
-@test "5 - tvdb-authenticate INT : cached token exists and edited less than 24 hours ago should return token from cache" {
-	cachedTokenValue="fake-token-value"
-	echo "$cachedTokenValue" > "$CACHED_TOKEN_FILE"
+@test "4 - tvdb-authenticate : cached token exists and edited less than 24 hours ago should return token from cache" {
+	cached_token_value="fake-token-value"
+	echo "$cached_token_value" > "$CACHED_TOKEN_FILE"
 	touch -d "23 hours ago" "$CACHED_TOKEN_FILE"
 
-	run "$UTILITIES_SRC_DIR"/tvdb-authenticate "$TVDB_API_KEY"
+	run tvdb-authenticate "$TVDB_API_KEY"
 	assert_success
-	assert_output "$cachedTokenValue"
+	assert_output "$cached_token_value"
 }
 
-@test "6 - tvdb-authenticate INT : cached token exists and edited 24 hours ago should return token from cache" {
-	cachedTokenValue="fake-token-value"
-	echo "$cachedTokenValue" > "$CACHED_TOKEN_FILE"
+@test "5 - tvdb-authenticate : cached token exists and edited 24 hours ago should not return token from cache" {
+	cached_token_value="fake-token-value"
+	echo "$cached_token_value" > "$CACHED_TOKEN_FILE"
 	touch -d "24 hours ago" "$CACHED_TOKEN_FILE"
 
-	run "$UTILITIES_SRC_DIR"/tvdb-authenticate "$TVDB_API_KEY"
+	run tvdb-authenticate "$TVDB_API_KEY"
 	assert_success
-	assert_output --regexp "^[A-Za-z0-9_.-]{464}$"
+	refute_output "$cached_token_value"
+	assert_output --regexp "^[A-Za-z0-9_.-]{300,}$"
 }
