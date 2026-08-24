@@ -2,7 +2,7 @@
 
 tv_episode_regex="^(.+)[-_. ][sS]([0-9]{1,2})[eE]([0-9]{1,2}).*"
 if [[ ! "$1" =~ $tv_episode_regex ]]; then
-	echo "ERROR: Filename '$1' cannot be parsed as tv episode"
+	echo "ERROR - Filename '$1' cannot be parsed as TV episode."
 	exit 1
 fi
 
