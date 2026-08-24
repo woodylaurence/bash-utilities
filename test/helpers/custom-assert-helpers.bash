@@ -6,6 +6,18 @@ assert_json_equal() {
 		fail "actual output is not valid JSON: $actual"
 	fi
 
+	local actual_type=$(jq -r 'type' <<< "$actual")
+	local expected_type=$(jq -r 'type' <<< "$expected")
+
+	if [[ "$actual_type" != "$expected_type" ]]; then
+		fail "$(printf 'JSON type mismatch:\n  actual type  : %s\n  expected type: %s' "$actual_type" "$expected_type")"
+	fi
+
+	local key_label="keys"
+	if [[ "$expected_type" == "array" ]]; then
+		key_label="indices"
+	fi
+
 	local diff=$(jq -n \
 									--argjson expected "$expected" \
 									--argjson actual "$actual" \
@@ -29,23 +41,23 @@ assert_json_equal() {
 		return 0
 	fi
 
-	message=$(jq -r '
+	message=$(jq -r --arg key_label "$key_label" '
 		def format_list(items):
 			items | map("    - " + tostring) | join("\n");
 
 		def format_mismatches(items):
 			items | map(
-				"    - " + .key + "\n"
+				"    - " + (.key | tostring) + "\n"
 				+ "        actual  : " + (.actual | tostring) + "\n"
 				+ "        expected: " + (.expected | tostring)
 			) | join("\n");
 
 		[
 			(if (.missing_keys | length) > 0 then
-				"  missing keys:\n" + format_list(.missing_keys)
+				"  missing \($key_label):\n" + format_list(.missing_keys)
 			else empty end),
 			(if (.extra_keys | length) > 0 then
-				"  extra keys:\n" + format_list(.extra_keys)
+				"  extra \($key_label):\n" + format_list(.extra_keys)
 			else empty end),
 			(if (.value_mismatches | length) > 0 then
 				"  value mismatches:\n" + format_mismatches(.value_mismatches)

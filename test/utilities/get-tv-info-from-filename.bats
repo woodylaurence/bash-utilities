@@ -7,14 +7,6 @@ load ../helpers/custom-assert-helpers
 
 ORIGINAL_PATH_VARIABLE=$PATH
 
-setup() {
-	PATH=PATH=$(echo "$PATH" | sed -r "s|/usr/local/bin|$UTILITIES_SRC_DIR|")
-}
-
-teardown() {
-	PATH="$ORIGINAL_PATH_VARIABLE"
-}
-
 @test "1 - get-tv-info-from-filename: filename doesnt have series name" {
 	fakeFilename="S01E01.mkv"
 	run get-tv-info-from-filename $fakeFilename
