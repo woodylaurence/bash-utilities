@@ -7,7 +7,7 @@ load ../helpers/custom-assert-helpers
 
 ORIGINAL_PATH_VARIABLE=$PATH
 
-@test "1 - get-tv-info-from-filename: filename doesnt have series name" {
+@test "1 - get-tv-info-from-filename : filename doesnt have series name" {
 	fakeFilename="S01E01.mkv"
 	run get-tv-info-from-filename $fakeFilename
 
@@ -15,7 +15,7 @@ ORIGINAL_PATH_VARIABLE=$PATH
 	assert_output "ERROR - Filename '$fakeFilename' cannot be parsed as TV episode."
 }
 
-@test "2 - get-tv-info-from-filename: filename has invalid or missing season number" {
+@test "2 - get-tv-info-from-filename : filename has invalid or missing season number" {
 	fileNameWithMissingSeasonIdentifier="StarTrek_E01.mkv"
 	run get-tv-info-from-filename $fileNameWithMissingSeasonNumber
 
@@ -35,7 +35,7 @@ ORIGINAL_PATH_VARIABLE=$PATH
 	assert_output "ERROR - Filename '$fileNameWithNonNumericSeasonNumber' cannot be parsed as TV episode."
 }
 
-@test "3 - get-tv-info-from-filename: filename has invalid or missing episode number" {
+@test "3 - get-tv-info-from-filename : filename has invalid or missing episode number" {
 	fileNameWithMissingEpisodeIdentifier="StarTrek_S01.mkv"
 	run get-tv-info-from-filename $fileNameWithMissingEpisodeIdentifier
 
@@ -55,7 +55,7 @@ ORIGINAL_PATH_VARIABLE=$PATH
 	assert_output "ERROR - Filename '$fileNameWithNonNumericSeasonNumber' cannot be parsed as TV episode."
 }
 
-@test "4 - get-tv-info-from-filename: filename has single digit season" {
+@test "4 - get-tv-info-from-filename : filename has single digit season" {
 	run get-tv-info-from-filename "Psych_S1E19.mkv"
 
 	assert_success
@@ -74,7 +74,7 @@ ORIGINAL_PATH_VARIABLE=$PATH
 	}'
 }
 
-@test "5 - get-tv-info-from-filename: filename has two digit season" {
+@test "5 - get-tv-info-from-filename : filename has two digit season" {
 	run get-tv-info-from-filename "Psych_S01E19.mkv"
 
 	assert_success
@@ -110,7 +110,7 @@ ORIGINAL_PATH_VARIABLE=$PATH
 	}'
 }
 
-@test "6 - get-tv-info-from-filename: filename has zero season number" {
+@test "6 - get-tv-info-from-filename : filename has zero season number" {
 	run get-tv-info-from-filename "Psych_S0E19.mkv"
 
 	assert_success
@@ -146,7 +146,7 @@ ORIGINAL_PATH_VARIABLE=$PATH
 	}'
 }
 
-@test "7 - get-tv-info-from-filename: season-identifier is lowercase" {
+@test "7 - get-tv-info-from-filename : season-identifier is lowercase" {
 	run get-tv-info-from-filename "StarTrekTheNextGeneration_s02E18.mkv"
 
 	assert_success
@@ -165,7 +165,7 @@ ORIGINAL_PATH_VARIABLE=$PATH
 	}'
 }
 
-@test "8 - get-tv-info-from-filename: filename has single digit episode" {
+@test "8 - get-tv-info-from-filename : filename has single digit episode" {
 	run get-tv-info-from-filename "Sherlock_S01E5.mkv"
 
 	assert_success
@@ -184,7 +184,7 @@ ORIGINAL_PATH_VARIABLE=$PATH
 		}'
 }
 
-@test "9 - get-tv-info-from-filename: filename has two digit episode" {
+@test "9 - get-tv-info-from-filename : filename has two digit episode" {
 	run get-tv-info-from-filename "Sherlock_S01E05.mkv"
 
 	assert_success
@@ -220,7 +220,7 @@ ORIGINAL_PATH_VARIABLE=$PATH
 		}'
 }
 
-@test "10 - get-tv-info-from-filename: episode-identifier is lowercase" {
+@test "10 - get-tv-info-from-filename : episode-identifier is lowercase" {
 	run get-tv-info-from-filename "StarTrekTheNextGeneration_S02e18.mkv"
 
 	assert_success
@@ -239,7 +239,7 @@ ORIGINAL_PATH_VARIABLE=$PATH
 		}'
 }
 
-@test "11 - get-tv-info-from-filename: series has multiple words" {
+@test "11 - get-tv-info-from-filename : series has multiple words" {
 	run get-tv-info-from-filename "StarTrekTheNextGeneration_S02E18.mkv"
 
 	assert_success
@@ -258,7 +258,7 @@ ORIGINAL_PATH_VARIABLE=$PATH
 		}'
 }
 
-@test "12 - get-tv-info-from-filename: series has words separated by spaces, periods, dashes or underscores" {
+@test "12 - get-tv-info-from-filename : series has words separated by spaces, periods, dashes or underscores" {
 	run get-tv-info-from-filename "Star.Trek_The-Next   Generation_S02E18.mkv"
 
 	assert_success
@@ -277,7 +277,7 @@ ORIGINAL_PATH_VARIABLE=$PATH
 		}'
 }
 
-@test "13 - get-tv-info-from-filename: period character between series name and season identifier" {
+@test "13 - get-tv-info-from-filename : period character between series name and season identifier" {
 	run get-tv-info-from-filename "Sherlock Holmes.S03E04.mp4"
 
 	assert_success
@@ -296,7 +296,7 @@ ORIGINAL_PATH_VARIABLE=$PATH
 		}'
 }
 
-@test "14 - get-tv-info-from-filename: space character between series name and season identifier" {
+@test "14 - get-tv-info-from-filename : space character between series name and season identifier" {
 	run get-tv-info-from-filename "Sherlock Holmes S03E04.avi"
 
 	assert_success
@@ -315,7 +315,7 @@ ORIGINAL_PATH_VARIABLE=$PATH
 		}'
 }
 
-@test "15 - get-tv-info-from-filename: dash character between series name and season identifier" {
+@test "15 - get-tv-info-from-filename : dash character between series name and season identifier" {
 	run get-tv-info-from-filename "Sherlock Holmes-S03E04.m4v"
 
 	assert_success
